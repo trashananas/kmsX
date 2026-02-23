@@ -26,13 +26,14 @@ export default function SwipeMode() {
   }, [user, isUserLoading, router]);
 
   const swipeQuery = useMemoFirebase(() => {
+    if (!user) return null;
     const baseRef = collection(firestore, 'item_listings');
     return query(
       baseRef, 
       where('status', '==', 'available'),
       limit(50)
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: rawItems, isLoading } = useCollection(swipeQuery);
   const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
@@ -168,7 +169,6 @@ export default function SwipeMode() {
               fill 
               className="object-cover pointer-events-none"
               priority
-              data-ai-hint="item photo"
             />
             
             {direction === 'right' && (

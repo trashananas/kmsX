@@ -43,10 +43,11 @@ export default function BrowseItems() {
   }, [user, isUserLoading, router]);
 
   const itemsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     const baseRef = collection(firestore, 'item_listings');
     let q = query(baseRef);
 
-    if (showOnlyMine && user) {
+    if (showOnlyMine) {
       q = query(baseRef, where('ownerId', '==', user.uid));
     } else {
       q = query(baseRef, where('status', '==', 'available'));
@@ -56,11 +57,15 @@ export default function BrowseItems() {
     }
     
     return q;
-  }, [firestore, selectedCategoryId, showOnlyMine, user?.uid]);
+  }, [firestore, selectedCategoryId, showOnlyMine, user]);
 
   const { data: items, isLoading } = useCollection(itemsQuery);
   
-  const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'categories');
+  }, [firestore, user]);
+  
   const { data: categories } = useCollection(categoriesQuery);
 
   const filteredItems = items?.filter(item => 

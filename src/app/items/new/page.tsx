@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -36,7 +37,11 @@ export default function NewItemListing() {
     locationName: '',
   });
 
-  const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'categories');
+  }, [firestore, user]);
+
   const { data: categories } = useCollection(categoriesQuery);
 
   if (!user) {
