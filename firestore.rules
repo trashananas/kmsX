@@ -6,47 +6,6 @@
  * access control for administrative functions. The primary goal is to ensure that users 
  * have full control over their own profiles and item listings while maintaining a public 
  * marketplace for "available" goods. 
- *
- * DATA STRUCTURE:
- * - /users/{userId}: Private and public user profile data, keyed by the Firebase Auth UID.
- * - /categories/{categoryId}: Global classification data for items.
- * - /item_listings/{itemListingId}: A flat, top-level collection of all exchange items.
- * - /roles_admin/{userId}: A sentinel collection where the existence of a document grants admin rights.
- *
- * KEY SECURITY DECISIONS:
- * - Ownership Independence: Authorization logic for item listings is self-contained via a 
- *   denormalized 'ownerId' field, eliminating the need for cross-document lookups.
- * - Existence-Based Roles: Admin privileges are verified using an efficient 'exists' check 
- *   on the /roles_admin path.
- * - Structural Segregation: Items are filtered by 'status' to distinguish between public 
- *   offerings and private/draft listings.
- * - Prototyping Flexibility: Rules enforce "who" can write but are permissive regarding "what" 
- *   is written (schema-agnostic) to support rapid development cycles.
- *
- * DENORMALIZATION FOR AUTHORIZATION:
- * - 'ItemListing' documents include an 'ownerId' field. This allows the rules to verify 
- *   ownership (request.auth.uid == resource.data.ownerId) without performing additional 
- *   document reads, reducing latency and cost.
- */
-
-/*
- * STEP 1: ANALYSIS & SYNTHESIS
- * 
- * 1. Adopt the Intent:
- *    The primary intent is to secure the 'Polochka Exchange' by ensuring users can only 
- *    manage their own content, while allowing a public browsing experience for active 
- *    listings. Administrative tasks (Category management) are restricted to a subset of users.
- * 
- * 2. Access Control Patterns:
- *    - /users/{userId}: Pattern 1 (Ownership) & Pattern 4 (Self-Creation).
- *    - /categories/{categoryId}: Pattern 2 (Roles - Admin) & Pattern 3 (Public Read).
- *    - /item_listings/{itemListingId}: Pattern 5 (Public Read with Owner-Only Writes).
- *    - /roles_admin/{userId}: Pattern 2 (Global Roles - Existence check).
- * 
- * 3. Ambiguity Resolution:
- *    The IR mentions some fields in 'UserProfile' are public and some are private. In this 
- *    prototyping phase, we will allow 'get' and 'list' for all authenticated users to 
- *    facilitate browsing, but restrict 'update' and 'delete' strictly to the owner.
  */
 
 rules_version = '2';
@@ -78,43 +37,32 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     /**
-     * @description Rules for user profiles. Users can manage their own profile; others can read profiles for browsing.
+     * @description Rules for user profiles. Public fields are readable by everyone.
      * @path /users/{userId}
-     * @allow (create) request.auth.uid == userId
-     * @deny (update) request.auth.uid != userId
-     * @principle Ownership-based writes and self-creation validation.
      */
     match /users/{userId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true; // Разрешаем публичный просмотр профилей для обмена
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for item categories. Categories are managed by admins but readable by all users.
+     * @description Rules for item categories. Categories are managed by admins but readable by all.
      * @path /categories/{categoryId}
-     * @allow (get) isSignedIn()
-     * @deny (create) !isAdmin()
-     * @principle Role-based access control (RBAC) for administrative data.
      */
     match /categories/{categoryId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true; // Категории публичны
       allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Rules for item listings. Owners have full control. Others can read if the item is 'available'.
+     * @description Rules for item listings. Publicly browsable if 'available'.
      * @path /item_listings/{itemListingId}
-     * @allow (update) resource.data.ownerId == request.auth.uid
-     * @deny (delete) resource.data.ownerId != request.auth.uid
-     * @principle Pattern 5: Owner-only writes with status-dependent public reads.
      */
     match /item_listings/{itemListingId} {
-      // Note: resource.data is used here for 'get' only. 'list' rules in P6 are path or state based.
-      // For top-level listings, we allow listing for all signed-in users, assuming the query filters for 'available' or 'ownerId'.
-      allow get: if isSignedIn() && (resource.data.status == 'available' || isOwner(resource.data.ownerId));
-      allow list: if isSignedIn();
+      allow get: if resource.data.status == 'available' || isOwner(resource.data.ownerId);
+      allow list: if true; // Клиенты должны фильтровать по статусу 'available'
       
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isExistingOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId;
@@ -122,16 +70,12 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for admin role indicators. Existence of a doc grants admin status.
+     * @description Rules for admin roles.
      * @path /roles_admin/{userId}
-     * @allow (get) isSignedIn()
-     * @deny (write) true
-     * @principle Global role assignment using existence-over-content pattern.
      */
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      // Role management is typically handled via a secure admin environment or Firebase Console.
       allow create, update, delete: if false;
     }
   }
