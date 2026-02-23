@@ -28,8 +28,8 @@ export default function Navbar() {
   const { user } = useUser();
   const auth = useAuth();
 
-  const handleLogout = () => {
-    logOut(auth);
+  const handleLogout = async () => {
+    await logOut(auth);
     router.push('/');
   };
 

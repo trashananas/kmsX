@@ -19,30 +19,42 @@ export default function AuthPage() {
   const auth = useAuth();
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return;
+    
     setLoading(true);
     try {
-      initiateEmailSignIn(auth, email, password);
-      // Auth state listener in FirebaseProvider will handle the redirect if successful
+      await initiateEmailSignIn(auth, email.trim(), password);
       toast({ title: "Вход выполнен", description: "Добро пожаловать обратно!" });
       router.push('/items');
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Ошибка", description: err.message });
+      let message = "Не удалось войти. Проверьте данные.";
+      if (err.code === 'auth/invalid-email') message = "Некорректный адрес почты.";
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') message = "Неверный логин или пароль.";
+      
+      toast({ variant: "destructive", title: "Ошибка", description: message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return;
+
     setLoading(true);
     try {
-      initiateEmailSignUp(auth, email, password);
+      await initiateEmailSignUp(auth, email.trim(), password);
       toast({ title: "Аккаунт создан", description: "Теперь вы можете размещать объявления." });
       router.push('/items');
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Ошибка", description: err.message });
+      let message = "Ошибка при регистрации.";
+      if (err.code === 'auth/invalid-email') message = "Некорректный адрес почты.";
+      if (err.code === 'auth/email-already-in-use') message = "Этот email уже занят.";
+      if (err.code === 'auth/weak-password') message = "Слишком простой пароль (минимум 6 символов).";
+      
+      toast({ variant: "destructive", title: "Ошибка", description: message });
     } finally {
       setLoading(false);
     }
