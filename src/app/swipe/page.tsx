@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 const SWIPE_ITEMS = [
-  { id: '1', title: 'Acoustic Guitar', category: 'Music', location: 'Brooklyn, NY', image: 'https://picsum.photos/seed/swipe1/800/1200', desc: 'Slightly used Yamaha guitar. Perfect for beginners.', user: 'Alex M.' },
-  { id: '2', title: 'Succulent Collection', category: 'Home', location: 'Queens, NY', image: 'https://picsum.photos/seed/swipe2/800/1200', desc: '5 healthy succulents in ceramic pots. Looking for books.', user: 'Sarah J.' },
-  { id: '3', title: 'Mechanical Keyboard', category: 'Electronics', location: 'Manhattan, NY', image: 'https://picsum.photos/seed/swipe3/800/1200', desc: 'RGB, Blue switches. Clicky and loud!', user: 'David W.' },
-  { id: '4', title: 'Vintage Levi Jacket', category: 'Clothes', location: 'Williamsburg, NY', image: 'https://picsum.photos/seed/swipe4/800/1200', desc: 'Size M. Perfect vintage condition.', user: 'Elena P.' },
+  { id: '1', title: 'Акустическая гитара', category: 'Музыка', location: 'Москва', image: 'https://picsum.photos/seed/swipe1/800/1200', desc: 'Немного подержанная гитара Yamaha. Идеально для новичков.', user: 'Алексей М.' },
+  { id: '2', title: 'Коллекция суккулентов', category: 'Дом', location: 'Санкт-Петербург', image: 'https://picsum.photos/seed/swipe2/800/1200', desc: '5 здоровых суккулентов в керамических горшках. Ищу книги.', user: 'Сара Д.' },
+  { id: '3', title: 'Механическая клавиатура', category: 'Электроника', location: 'Новосибирск', image: 'https://picsum.photos/seed/swipe3/800/1200', desc: 'RGB, синие свичи. Громкая и приятная!', user: 'Давид В.' },
+  { id: '4', title: 'Винтажная куртка Levi', category: 'Одежда', location: 'Казань', image: 'https://picsum.photos/seed/swipe4/800/1200', desc: 'Размер M. Идеальное винтажное состояние.', user: 'Елена П.' },
 ];
 
 export default function SwipeMode() {
@@ -34,14 +34,14 @@ export default function SwipeMode() {
         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <RefreshCw className="w-10 h-10 text-primary animate-spin-slow" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">No more items to swipe!</h2>
-        <p className="text-muted-foreground mb-8">You've reached the end of the stack for your area.</p>
+        <h2 className="text-2xl font-bold mb-2">Вещи закончились!</h2>
+        <p className="text-muted-foreground mb-8">Вы просмотрели все доступные варианты в вашем районе.</p>
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => setCurrentIndex(0)}>
-            Start Over
+            Начать сначала
           </Button>
           <Link href="/items">
-            <Button>Back to Grid</Button>
+            <Button>Вернуться к списку</Button>
           </Link>
         </div>
       </div>
@@ -55,12 +55,12 @@ export default function SwipeMode() {
         <Link href="/items">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Grid Mode
+            Список
           </Button>
         </Link>
         <div className="text-center">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest">Discovery Feed</p>
-          <h1 className="text-sm font-medium text-muted-foreground">Brooklyn & nearby</h1>
+          <p className="text-xs font-bold text-primary uppercase tracking-widest">Лента открытий</p>
+          <h1 className="text-sm font-medium text-muted-foreground">Рядом с вами</h1>
         </div>
         <div className="w-20" /> {/* Spacer */}
       </div>
@@ -84,12 +84,12 @@ export default function SwipeMode() {
           {/* Action Overlay Labels */}
           {direction === 'right' && (
             <div className="absolute top-10 left-10 border-4 border-emerald-500 text-emerald-500 font-bold text-4xl px-4 py-2 rounded-xl rotate-[-15deg] uppercase z-50">
-              LIKE
+              ДА!
             </div>
           )}
           {direction === 'left' && (
             <div className="absolute top-10 right-10 border-4 border-rose-500 text-rose-500 font-bold text-4xl px-4 py-2 rounded-xl rotate-[15deg] uppercase z-50">
-              NOPE
+              НЕТ
             </div>
           )}
 
@@ -112,7 +112,7 @@ export default function SwipeMode() {
               <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-[10px]">
                 {currentItem.user.charAt(0)}
               </div>
-              <span className="text-xs text-white/60">Listed by {currentItem.user}</span>
+              <span className="text-xs text-white/60">Добавил(а) {currentItem.user}</span>
             </div>
           </div>
         </div>

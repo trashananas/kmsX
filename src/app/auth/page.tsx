@@ -25,21 +25,21 @@ export default function AuthPage() {
           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30">
             <Layers className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold font-headline">Welcome to Polochka</h1>
-          <p className="text-muted-foreground">The neighborhood's favorite exchange</p>
+          <h1 className="text-2xl font-bold font-headline">Добро пожаловать в Полочку</h1>
+          <p className="text-muted-foreground">Любимый сервис обмена вещами</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl bg-muted p-1 mb-6">
-            <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Login</TabsTrigger>
-            <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
+            <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Вход</TabsTrigger>
+            <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Регистрация</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
             <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
               <CardHeader className="pt-8 px-8">
-                <CardTitle className="text-xl">Sign in</CardTitle>
-                <CardDescription>Enter your credentials to access your account.</CardDescription>
+                <CardTitle className="text-xl">Войти</CardTitle>
+                <CardDescription>Введите данные для доступа к вашему аккаунту.</CardDescription>
               </CardHeader>
               <form onSubmit={handleAuth}>
                 <CardContent className="space-y-4 p-8">
@@ -52,8 +52,8 @@ export default function AuthPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Button variant="link" size="sm" className="px-0 font-normal h-auto">Forgot password?</Button>
+                      <Label htmlFor="password">Пароль</Label>
+                      <Button variant="link" size="sm" className="px-0 font-normal h-auto">Забыли пароль?</Button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -63,9 +63,9 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="p-8 pt-0">
                   <Button type="submit" className="w-full h-12 rounded-xl group" disabled={loading}>
-                    {loading ? "Signing in..." : (
+                    {loading ? "Вход..." : (
                       <>
-                        Sign In
+                        Войти
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
@@ -78,16 +78,16 @@ export default function AuthPage() {
           <TabsContent value="signup">
             <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
               <CardHeader className="pt-8 px-8">
-                <CardTitle className="text-xl">Create Account</CardTitle>
-                <CardDescription>Join the Polochka community today.</CardDescription>
+                <CardTitle className="text-xl">Создать аккаунт</CardTitle>
+                <CardDescription>Присоединяйтесь к сообществу сегодня.</CardDescription>
               </CardHeader>
               <form onSubmit={handleAuth}>
                 <CardContent className="space-y-4 p-8">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">Полное имя</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="name" placeholder="John Doe" className="pl-10 h-12 rounded-xl" required />
+                      <Input id="name" placeholder="Иван Иванов" className="pl-10 h-12 rounded-xl" required />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -98,7 +98,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password">Password</Label>
+                    <Label htmlFor="reg-password">Пароль</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input id="reg-password" type="password" className="pl-10 h-12 rounded-xl" required />
@@ -107,7 +107,7 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="p-8 pt-0">
                   <Button type="submit" className="w-full h-12 rounded-xl bg-accent text-accent-foreground hover:bg-accent/90" disabled={loading}>
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? "Создание аккаунта..." : "Зарегистрироваться"}
                   </Button>
                 </CardFooter>
               </form>

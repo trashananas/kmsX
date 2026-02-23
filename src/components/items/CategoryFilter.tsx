@@ -13,13 +13,13 @@ import {
 } from 'lucide-react';
 
 const categories = [
-  { name: 'All', icon: LayoutGrid },
-  { name: 'Clothes', icon: Shirt },
-  { name: 'Electronics', icon: Smartphone },
-  { name: 'Books', icon: Book },
-  { name: 'Furniture', icon: Home },
-  { name: 'Toys', icon: Gamepad2 },
-  { name: 'Sporting Goods', icon: Bike },
+  { name: 'Все', icon: LayoutGrid },
+  { name: 'Одежда', icon: Shirt },
+  { name: 'Электроника', icon: Smartphone },
+  { name: 'Книги', icon: Book },
+  { name: 'Мебель', icon: Home },
+  { name: 'Игрушки', icon: Gamepad2 },
+  { name: 'Спорт', icon: Bike },
 ];
 
 interface CategoryFilterProps {

@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { label: 'Browse', href: '/items', icon: Compass },
-  { label: 'Swipe', href: '/swipe', icon: Zap },
-  { label: 'Categories', href: '/categories', icon: Layers },
+  { label: 'Обзор', href: '/items', icon: Compass },
+  { label: 'Свайп', href: '/swipe', icon: Zap },
+  { label: 'Категории', href: '/categories', icon: Layers },
 ];
 
 export default function Navbar() {
@@ -23,7 +23,7 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <Layers className="text-white w-5 h-5" />
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-primary">Polochka</span>
+          <span className="font-headline font-bold text-xl tracking-tight text-primary">Полочка</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6">
@@ -49,7 +49,7 @@ export default function Navbar() {
           <Link href="/items/new">
             <Button className="hidden sm:flex gap-2">
               <PlusCircle className="w-4 h-4" />
-              List Item
+              Разместить
             </Button>
             <Button size="icon" className="sm:hidden">
               <PlusCircle className="w-5 h-5" />

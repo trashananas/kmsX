@@ -5,8 +5,8 @@ import Navbar from '@/components/layout/Navbar';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Polochka Exchange | Trade with trust',
-  description: 'The modern way to exchange items with people in your neighborhood.',
+  title: 'Полочка | Обмен вещами с соседями',
+  description: 'Современный способ обмениваться вещами с людьми в вашем районе. Просто, честно и экологично.',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ru">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

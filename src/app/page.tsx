@@ -7,20 +7,20 @@ import { Compass, Zap, MapPin, RefreshCw } from 'lucide-react';
 
 const features = [
   {
-    title: "Browse Locally",
-    description: "Find amazing items right in your neighborhood with our location-aware search.",
+    title: "Ищите рядом",
+    description: "Находите отличные вещи прямо в вашем районе с помощью поиска по геолокации.",
     icon: MapPin,
     color: "bg-blue-100 text-blue-600"
   },
   {
-    title: "Swipe & Discover",
-    description: "Discover items in a fun, Tinder-style interface. Swipe right if you like it!",
+    title: "Свайпайте и находите",
+    description: "Открывайте для себя вещи в удобном формате. Свайп вправо, если вещь понравилась!",
     icon: Zap,
     color: "bg-yellow-100 text-yellow-600"
   },
   {
-    title: "Zero Waste Trade",
-    description: "Give your items a second life and get something you need without spending money.",
+    title: "Обмен без отходов",
+    description: "Дайте вещам вторую жизнь и получите то, что вам нужно, не тратя денег.",
     icon: RefreshCw,
     color: "bg-emerald-100 text-emerald-600"
   }
@@ -33,22 +33,22 @@ export default function Home() {
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-primary/10 to-transparent">
         <div className="container px-4 text-center z-10">
           <h1 className="text-4xl md:text-6xl font-headline font-bold mb-6 tracking-tight">
-            Exchange items with <br />
-            <span className="text-primary">trust and simplicity.</span>
+            Обменивайтесь вещами <br />
+            <span className="text-primary">просто и с доверием.</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-            Join the neighborhood community of Polochka. Swap clothes, electronics, books and more without the hassle of selling.
+            Присоединяйтесь к сообществу «Полочка». Меняйте одежду, электронику, книги и многое другое без лишних хлопот с продажей.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/items">
               <Button size="lg" className="px-10 h-14 text-lg">
-                Explore Items
+                Смотреть вещи
               </Button>
             </Link>
             <Link href="/swipe">
               <Button size="lg" variant="outline" className="px-10 h-14 text-lg gap-2">
                 <Zap className="w-5 h-5 fill-accent text-accent" />
-                Try Swipe Mode
+                Режим свайпа
               </Button>
             </Link>
           </div>
@@ -81,27 +81,27 @@ export default function Home() {
         <div className="container px-4">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="flex-1">
-              <h2 className="text-3xl font-headline font-bold mb-6">Simple 3-step exchange</h2>
+              <h2 className="text-3xl font-headline font-bold mb-6">Простой обмен в 3 шага</h2>
               <div className="space-y-8">
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 font-bold">1</div>
                   <div>
-                    <h4 className="font-bold text-lg">List your items</h4>
-                    <p className="text-muted-foreground">Take a quick photo, add a description, and select a category.</p>
+                    <h4 className="font-bold text-lg">Разместите свои вещи</h4>
+                    <p className="text-muted-foreground">Сделайте фото, добавьте описание и выберите категорию.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 font-bold">2</div>
                   <div>
-                    <h4 className="font-bold text-lg">Find what you need</h4>
-                    <p className="text-muted-foreground">Browse local listings or swipe through discovery feed.</p>
+                    <h4 className="font-bold text-lg">Найдите нужное</h4>
+                    <p className="text-muted-foreground">Просматривайте объявления рядом или свайпайте в ленте открытий.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0 font-bold">3</div>
                   <div>
-                    <h4 className="font-bold text-lg">Meet and Swap</h4>
-                    <p className="text-muted-foreground">Chat with the owner and arrange a safe meeting place for exchange.</p>
+                    <h4 className="font-bold text-lg">Встретьтесь и обменяйтесь</h4>
+                    <p className="text-muted-foreground">Спишитесь с владельцем и договоритесь о безопасной встрече.</p>
                   </div>
                 </div>
               </div>
@@ -122,13 +122,13 @@ export default function Home() {
       {/* CTA Section */}
       <section className="container px-4 py-20">
         <div className="bg-primary rounded-[3rem] p-12 text-center text-primary-foreground">
-          <h2 className="text-3xl md:text-4xl font-headline font-bold mb-6">Ready to declutter and discover?</h2>
+          <h2 className="text-3xl md:text-4xl font-headline font-bold mb-6">Готовы избавиться от лишнего и найти новое?</h2>
           <p className="text-primary-foreground/80 max-w-xl mx-auto mb-10 text-lg">
-            Join thousands of neighbors already exchanging items on Polochka.
+            Присоединяйтесь к тысячам соседей, которые уже обмениваются на «Полочке».
           </p>
           <Link href="/auth">
             <Button size="lg" variant="secondary" className="px-10 h-14 text-lg">
-              Get Started Now
+              Начать прямо сейчас
             </Button>
           </Link>
         </div>

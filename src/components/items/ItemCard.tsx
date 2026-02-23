@@ -52,7 +52,7 @@ export default function ItemCard({ item }: { item: Item }) {
           <span>{item.distance}</span>
         </div>
         <Button className="w-full rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-all shadow-none">
-          Quick View
+          Подробнее
         </Button>
       </CardContent>
     </Card>

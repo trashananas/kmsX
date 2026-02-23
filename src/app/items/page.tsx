@@ -10,21 +10,21 @@ import CategoryFilter from '@/components/items/CategoryFilter';
 
 // Mock Data
 const MOCK_ITEMS = [
-  { id: '1', title: 'Vintage Film Camera', category: 'Electronics', location: 'Brooklyn, NY', distance: '1.2 miles', image: 'https://picsum.photos/seed/item1/600/600', condition: 'Great' },
-  { id: '2', title: 'Mid-century Modern Chair', category: 'Furniture', location: 'Queens, NY', distance: '3.5 miles', image: 'https://picsum.photos/seed/item2/600/600', condition: 'Like New' },
-  { id: '3', title: 'Sapiens: A Brief History', category: 'Books', location: 'Manhattan, NY', distance: '0.8 miles', image: 'https://picsum.photos/seed/item3/600/600', condition: 'Used' },
-  { id: '4', title: 'Mountain Bike 24"', category: 'Sporting Goods', location: 'Jersey City, NJ', distance: '5.1 miles', image: 'https://picsum.photos/seed/item4/600/600', condition: 'Good' },
-  { id: '5', title: 'Lego Star Wars Set', category: 'Toys', location: 'Brooklyn, NY', distance: '1.5 miles', image: 'https://picsum.photos/seed/item5/600/600', condition: 'Brand New' },
-  { id: '6', title: 'Wool Winter Coat', category: 'Clothes', location: 'Bronx, NY', distance: '7.2 miles', image: 'https://picsum.photos/seed/item6/600/600', condition: 'Like New' },
+  { id: '1', title: 'Винтажная камера', category: 'Электроника', location: 'Москва', distance: '1.2 км', image: 'https://picsum.photos/seed/item1/600/600', condition: 'Отличное' },
+  { id: '2', title: 'Стул в стиле модерн', category: 'Мебель', location: 'Санкт-Петербург', distance: '3.5 км', image: 'https://picsum.photos/seed/item2/600/600', condition: 'Как новый' },
+  { id: '3', title: 'Sapiens: Краткая история', category: 'Книги', location: 'Екатеринбург', distance: '0.8 км', image: 'https://picsum.photos/seed/item3/600/600', condition: 'Б/У' },
+  { id: '4', title: 'Горный велосипед 24"', category: 'Спорт', location: 'Казань', distance: '5.1 км', image: 'https://picsum.photos/seed/item4/600/600', condition: 'Хорошее' },
+  { id: '5', title: 'Lego Star Wars', category: 'Игрушки', location: 'Сочи', distance: '1.5 км', image: 'https://picsum.photos/seed/item5/600/600', condition: 'Новый' },
+  { id: '6', title: 'Шерстяное пальто', category: 'Одежда', location: 'Новосибирск', distance: '7.2 км', image: 'https://picsum.photos/seed/item6/600/600', condition: 'Как новое' },
 ];
 
 export default function BrowseItems() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('Все');
 
   const filteredItems = MOCK_ITEMS.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'Все' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -36,7 +36,7 @@ export default function BrowseItems() {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
-              placeholder="Search for items..." 
+              placeholder="Поиск вещей..." 
               className="pl-10 h-12 bg-muted/30 border-none rounded-xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -45,7 +45,7 @@ export default function BrowseItems() {
           <div className="flex gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2 px-4 h-12 bg-muted/30 rounded-xl text-sm font-medium border border-transparent hover:border-primary/20 transition-all cursor-pointer">
               <MapPin className="w-4 h-4 text-primary" />
-              <span>Brooklyn, NY (5 mi)</span>
+              <span>Москва (5 км)</span>
             </div>
             <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
               <Filter className="w-4 h-4" />
@@ -57,7 +57,7 @@ export default function BrowseItems() {
           {/* Categories Sidebar */}
           <aside className="w-full lg:w-64 shrink-0">
             <div className="sticky top-24">
-              <h2 className="text-lg font-bold mb-4 px-2">Categories</h2>
+              <h2 className="text-lg font-bold mb-4 px-2">Категории</h2>
               <CategoryFilter 
                 selected={selectedCategory} 
                 onSelect={setSelectedCategory} 
@@ -69,15 +69,15 @@ export default function BrowseItems() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold font-headline">
-                {selectedCategory === 'All' ? 'All Items' : selectedCategory}
-                <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length} results)</span>
+                {selectedCategory === 'Все' ? 'Все вещи' : selectedCategory}
+                <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length} результатов)</span>
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Sort by:</span>
+                <span>Сортировка:</span>
                 <select className="bg-transparent font-medium text-foreground outline-none cursor-pointer">
-                  <option>Proximity</option>
-                  <option>Newest</option>
-                  <option>Condition</option>
+                  <option>По близости</option>
+                  <option>Сначала новые</option>
+                  <option>По состоянию</option>
                 </select>
               </div>
             </div>
@@ -93,8 +93,8 @@ export default function BrowseItems() {
                 <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Search className="w-10 h-10 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No items found</h3>
-                <p className="text-muted-foreground">Try adjusting your search or category filters.</p>
+                <h3 className="text-xl font-bold mb-2">Ничего не найдено</h3>
+                <p className="text-muted-foreground">Попробуйте изменить параметры поиска или фильтры.</p>
               </div>
             )}
           </div>
