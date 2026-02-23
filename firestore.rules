@@ -53,7 +53,9 @@ service cloud.firestore {
      */
     match /categories/{categoryId} {
       allow get, list: if true; 
-      allow create, update, delete: if isAdmin();
+      // Разрешаем создавать категории любому авторизованному пользователю по вашей просьбе
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
     }
 
     /**
