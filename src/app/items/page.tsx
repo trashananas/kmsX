@@ -6,22 +6,34 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ItemCard from '@/components/items/ItemCard';
 import CategoryFilter from '@/components/items/CategoryFilter';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSearchParams } from 'next/navigation';
 
 export default function BrowseItems() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const firestore = useFirestore();
+  const { user } = useUser();
+  const searchParams = useSearchParams();
+  const showOnlyMine = searchParams.get('owner') === 'me';
 
   const itemsQuery = useMemoFirebase(() => {
     const baseRef = collection(firestore, 'item_listings');
-    if (selectedCategoryId === 'all') {
-      return query(baseRef, where('status', '==', 'available'));
+    let q = query(baseRef);
+
+    if (showOnlyMine && user) {
+      q = query(baseRef, where('ownerId', '==', user.uid));
+    } else {
+      q = query(baseRef, where('status', '==', 'available'));
+      if (selectedCategoryId !== 'all') {
+        q = query(q, where('categoryId', '==', selectedCategoryId));
+      }
     }
-    return query(baseRef, where('status', '==', 'available'), where('categoryId', '==', selectedCategoryId));
-  }, [firestore, selectedCategoryId]);
+    
+    return q;
+  }, [firestore, selectedCategoryId, showOnlyMine, user?.uid]);
 
   const { data: items, isLoading } = useCollection(itemsQuery);
 
@@ -67,7 +79,7 @@ export default function BrowseItems() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold font-headline">
-                {selectedCategoryId === 'all' ? 'Все вещи' : 'Результаты'}
+                {showOnlyMine ? 'Мои вещи' : (selectedCategoryId === 'all' ? 'Все вещи' : 'Результаты')}
                 {!isLoading && <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length})</span>}
               </h1>
             </div>
@@ -98,7 +110,9 @@ export default function BrowseItems() {
                   <PackageOpen className="w-10 h-10 text-muted-foreground/50" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Здесь пока пусто</h3>
-                <p className="text-muted-foreground">Будьте первым, кто разместит объявление в этой категории!</p>
+                <p className="text-muted-foreground">
+                  {showOnlyMine ? "У вас еще нет объявлений." : "Будьте первым, кто разместит объявление в этой категории!"}
+                </p>
               </div>
             )}
           </div>
