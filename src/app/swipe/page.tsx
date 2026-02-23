@@ -28,14 +28,17 @@ export default function SwipeMode() {
   const swipeQuery = useMemoFirebase(() => {
     if (!user) return null;
     const baseRef = collection(firestore, 'item_listings');
+    // Filter out items with 0 quantity (sold out)
     return query(
       baseRef, 
       where('status', '==', 'available'),
+      where('quantity', '>', 0),
       limit(50)
     );
   }, [firestore, user]);
 
   const { data: rawItems, isLoading } = useCollection(swipeQuery);
+  // Also filter my items on client side to avoid index issues
   const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
 
   const handleLike = useCallback((item: any) => {

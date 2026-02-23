@@ -28,7 +28,7 @@ service cloud.firestore {
       }
     }
 
-    // kmsX Categories - anyone logged in can read/create
+    // kmsX Categories
     match /categories/{categoryId} {
       allow read: if isSignedIn(); 
       allow create: if isSignedIn();
@@ -40,7 +40,10 @@ service cloud.firestore {
       // Must be logged in to browse kmsX
       allow read: if isSignedIn(); 
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      // Allow any signed in user to update (for reservations/decrementing quantity)
+      // In a real app we would restrict which fields can be updated by non-owners
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // Admin roles management

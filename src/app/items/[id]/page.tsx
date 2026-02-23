@@ -1,7 +1,7 @@
 
 "use client";
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,9 +15,9 @@ import {
   Clock,
   ShieldCheck,
   AlertTriangle,
-  Banknote,
   Wallet,
-  Package
+  Package,
+  CalendarCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,8 @@ import {
   useFirestore, 
   useUser, 
   deleteDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  setDocumentNonBlocking,
   useMemoFirebase
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -44,6 +46,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function ItemDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -51,6 +64,8 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const firestore = useFirestore();
   const { user } = useUser();
+  const [reserveCount, setReserveCount] = useState(1);
+  const [isReserveOpen, setIsReserveOpen] = useState(false);
 
   const from = searchParams.get('from');
   const backLink = from === 'swipe' ? '/swipe' : '/items';
@@ -73,6 +88,36 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       description: "Вещь больше не отображается в поиске kmsX.",
     });
     router.push('/items');
+  };
+
+  const handleReserve = () => {
+    if (!item || !user || reserveCount <= 0 || reserveCount > item.quantity) return;
+
+    const newQuantity = item.quantity - reserveCount;
+    
+    // Update global item quantity
+    updateDocumentNonBlocking(itemRef as any, {
+      quantity: newQuantity,
+      updatedAt: new Date().toISOString()
+    });
+
+    // Save reservation to user's favorites/reservations
+    const favRef = doc(firestore, 'users', user.uid, 'favorites', item.id);
+    setDocumentNonBlocking(favRef, {
+      itemId: item.id,
+      title: item.title,
+      imageUrl: item.imageUrls?.[0] || '',
+      condition: item.condition || '',
+      locationName: item.locationName || '',
+      reservedCount: reserveCount,
+      createdAt: new Date().toISOString()
+    }, { merge: true });
+
+    toast({
+      title: "Забронировано!",
+      description: `Вы забронировали ${reserveCount} шт. Вы можете найти их во вкладке «Лайки».`,
+    });
+    setIsReserveOpen(false);
   };
 
   if (isLoading) {
@@ -102,6 +147,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   }
 
   const isOwner = user && item.ownerId === user.uid;
+  const isSoldOut = item.quantity <= 0;
   const formattedDate = item.createdAt 
     ? format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru }) 
     : 'Недавно';
@@ -113,7 +159,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
         {backLabel}
       </Link>
 
-      <div className="flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border">
+      <div className={`flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border ${isSoldOut ? 'border-destructive/50' : ''}`}>
         {/* Image Section */}
         <div className="w-full md:w-1/2">
           <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
@@ -121,13 +167,18 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
               src={item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} 
               alt={item.title} 
               fill 
-              className="object-cover"
+              className={`object-cover ${isSoldOut ? 'grayscale' : ''}`}
               priority
             />
-            <div className="absolute top-4 left-4">
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
               <Badge className="bg-white/90 text-primary hover:bg-white border-none px-4 py-1.5 shadow-sm text-sm font-bold backdrop-blur-md">
                 {item.condition}
               </Badge>
+              {isSoldOut && (
+                <Badge variant="destructive" className="px-4 py-1.5 shadow-sm text-sm font-bold uppercase tracking-wider animate-pulse">
+                  Кончился
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -139,24 +190,24 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
               <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1">
                 {category?.name || 'Разное'}
               </Badge>
-              {item.status === 'available' && (
+              {!isSoldOut && (
                 <Badge className="bg-emerald-100 text-emerald-600 border-none px-3 py-1">
                   Свободно
                 </Badge>
               )}
             </div>
-            <h1 className="text-4xl font-headline font-bold mb-2 leading-tight">{item.title}</h1>
+            <h1 className={`text-4xl font-headline font-bold mb-2 leading-tight ${isSoldOut ? 'text-muted-foreground line-through' : ''}`}>
+              {item.title}
+            </h1>
             
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-primary">
+              <span className={`text-3xl font-bold ${isSoldOut ? 'text-muted-foreground' : 'text-primary'}`}>
                 {item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}
               </span>
-              {item.quantity > 1 && (
-                <Badge variant="outline" className="rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground">
-                  <Package className="w-3.5 h-3.5" />
-                  В наличии: {item.quantity} шт.
-                </Badge>
-              )}
+              <Badge variant="outline" className={`rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground ${isSoldOut ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}`}>
+                <Package className="w-3.5 h-3.5" />
+                {isSoldOut ? 'Нет в наличии' : `В наличии: ${item.quantity} шт.`}
+              </Badge>
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-8">
@@ -240,10 +291,48 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
                 </AlertDialogContent>
               </AlertDialog>
             ) : (
-              <Button className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-primary/20">
-                <MessageCircle className="w-5 h-5" />
-                {item.price > 0 ? 'Купить в kmsX' : 'Хочу забрать'}
-              </Button>
+              <Dialog open={isReserveOpen} onOpenChange={setIsReserveOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    className={`flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg ${isSoldOut ? 'bg-muted text-muted-foreground' : 'shadow-primary/20'}`}
+                    disabled={isSoldOut}
+                  >
+                    {isSoldOut ? (
+                      'Уже закончилось'
+                    ) : (
+                      <>
+                        <CalendarCheck className="w-5 h-5" />
+                        Забронировать
+                      </>
+                    )}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="rounded-[2rem]">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl">Бронирование</DialogTitle>
+                    <DialogDescription>
+                      Сколько единиц товара «{item.title}» вы хотите забронировать?
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-6">
+                    <Label htmlFor="reserve-count">Количество (макс. {item.quantity})</Label>
+                    <Input 
+                      id="reserve-count"
+                      type="number"
+                      min="1"
+                      max={item.quantity}
+                      value={reserveCount}
+                      onChange={(e) => setReserveCount(parseInt(e.target.value))}
+                      className="h-12 rounded-xl mt-2"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleReserve} className="w-full h-14 rounded-xl text-lg font-bold">
+                      Подтвердить бронь
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
             <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-2">
               <MessageCircle className="w-6 h-6" />
