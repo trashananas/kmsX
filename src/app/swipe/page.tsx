@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { X, Heart, MapPin, Info, ArrowLeft, RefreshCw, PackageOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { collection, query, where, limit } from 'firebase/firestore';
 export default function SwipeMode() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
   const firestore = useFirestore();
 
   const swipeQuery = useMemoFirebase(() => {
@@ -23,12 +24,40 @@ export default function SwipeMode() {
 
   const { data: items, isLoading } = useCollection(swipeQuery);
 
-  const handleSwipe = (dir: 'left' | 'right') => {
+  const handleSwipe = useCallback((dir: 'left' | 'right') => {
+    if (direction) return; // Prevent double swipes
     setDirection(dir);
     setTimeout(() => {
       setDirection(null);
       setCurrentIndex(prev => prev + 1);
     }, 400);
+  }, [direction]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') handleSwipe('left');
+      if (e.key === 'ArrowRight') handleSwipe('right');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSwipe]);
+
+  // Touch handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const delta = touchStart - touchEnd;
+
+    if (Math.abs(delta) > 50) { // Threshold for swipe
+      if (delta > 0) handleSwipe('left');
+      else handleSwipe('right');
+    }
+    setTouchStart(null);
   };
 
   if (isLoading) {
@@ -62,7 +91,8 @@ export default function SwipeMode() {
   }
 
   return (
-    <div className="fixed inset-0 top-16 bg-background flex flex-col z-40">
+    <div className="fixed inset-0 top-16 bg-background flex flex-col z-40 select-none">
+      {/* Header */}
       <div className="p-4 flex items-center justify-between border-b bg-white">
         <Link href="/items">
           <Button variant="ghost" size="sm" className="gap-2">
@@ -71,71 +101,87 @@ export default function SwipeMode() {
           </Button>
         </Link>
         <div className="text-center">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest">Лента открытий</p>
-          <h1 className="text-sm font-medium text-muted-foreground">Рядом с вами</h1>
+          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Лента открытий</p>
+          <h1 className="text-sm font-medium text-muted-foreground">Проведите пальцем или используйте стрелки</h1>
         </div>
         <div className="w-20" />
       </div>
 
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
+      {/* Swipe Container */}
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-6 sm:p-8">
         <div 
-          className={`relative w-full max-w-sm aspect-[3/4] rounded-[2.5rem] overflow-hidden shadow-2xl bg-white transition-all duration-300
+          className={`relative w-full max-w-sm aspect-[3/4.5] rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-white transition-all duration-400 ease-out cursor-grab active:cursor-grabbing
             ${direction === 'left' ? '-translate-x-[150%] rotate-[-20deg] opacity-0' : ''}
             ${direction === 'right' ? 'translate-x-[150%] rotate-[20deg] opacity-0' : ''}
           `}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
           <Image 
             src={currentItem.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} 
             alt={currentItem.title} 
             fill 
-            className="object-cover"
+            className="object-cover pointer-events-none"
             priority
           />
           
+          {/* Overlays */}
           {direction === 'right' && (
-            <div className="absolute top-10 left-10 border-4 border-emerald-500 text-emerald-500 font-bold text-4xl px-4 py-2 rounded-xl rotate-[-15deg] uppercase z-50">
-              ДА!
+            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center z-50">
+              <div className="border-8 border-emerald-500 text-emerald-500 font-black text-6xl px-8 py-4 rounded-3xl rotate-[-15deg] uppercase">
+                ЛАЙК
+              </div>
             </div>
           )}
           {direction === 'left' && (
-            <div className="absolute top-10 right-10 border-4 border-rose-500 text-rose-500 font-bold text-4xl px-4 py-2 rounded-xl rotate-[15deg] uppercase z-50">
-              НЕТ
+            <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center z-50">
+              <div className="border-8 border-rose-500 text-rose-500 font-black text-6xl px-8 py-4 rounded-3xl rotate-[15deg] uppercase">
+                НЕТ
+              </div>
             </div>
           )}
 
+          {/* Info Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent text-white">
             <div className="flex items-end justify-between mb-2">
-              <div>
-                <h2 className="text-3xl font-bold mb-1">{currentItem.title}</h2>
+              <div className="flex-1 pr-4">
+                <Badge className="bg-white/20 text-white border-none mb-3 backdrop-blur-md px-3">
+                  {currentItem.condition || 'Состояние'}
+                </Badge>
+                <h2 className="text-3xl font-bold mb-1 leading-tight">{currentItem.title}</h2>
                 <div className="flex items-center gap-2 text-white/80 text-sm">
                   <MapPin className="w-4 h-4" />
                   <span>{currentItem.locationName || 'Мир'}</span>
                 </div>
               </div>
-              <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <Info className="w-5 h-5" />
-              </Button>
+              <Link href={`/items/${currentItem.id}`}>
+                <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white/10 border-white/20 text-white hover:bg-white/20 shrink-0">
+                  <Info className="w-6 h-6" />
+                </Button>
+              </Link>
             </div>
-            <p className="text-sm text-white/70 line-clamp-2 mt-4">{currentItem.description}</p>
           </div>
         </div>
       </div>
 
-      <div className="p-8 flex items-center justify-center gap-8 bg-background">
+      {/* Control buttons (minimal) */}
+      <div className="p-8 flex items-center justify-center gap-6 bg-background">
         <Button 
           onClick={() => handleSwipe('left')}
           variant="outline" 
-          className="w-16 h-16 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-lg p-0"
+          className="w-14 h-14 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md p-0"
         >
-          <X className="w-8 h-8" />
+          <X className="w-6 h-6" />
         </Button>
         <Button 
           onClick={() => handleSwipe('right')}
-          className="w-20 h-20 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-xl p-0"
+          className="w-14 h-14 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-lg p-0"
         >
-          <Heart className="w-10 h-10 fill-current" />
+          <Heart className="w-6 h-6 fill-current" />
         </Button>
       </div>
     </div>
   );
 }
+
+import { Badge } from '@/components/ui/badge';
