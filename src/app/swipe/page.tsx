@@ -110,11 +110,8 @@ export default function SwipeMode() {
         </div>
         <h2 className="text-3xl font-bold mb-4 tracking-tight">Лента kmsX пуста!</h2>
         <p className="text-muted-foreground text-lg mb-10 max-w-sm">Вы просмотрели все доступные вещи от других участников.</p>
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
-          <Button variant="outline" className="h-14 rounded-2xl flex-1 text-lg" onClick={() => setCurrentIndex(0)}>
-            Сначала
-          </Button>
-          <Link href="/items" className="flex-1">
+        <div className="flex flex-col gap-4 w-full max-w-xs">
+          <Link href="/items" className="w-full">
             <Button className="h-14 rounded-2xl w-full text-lg font-bold">К списку</Button>
           </Link>
         </div>
