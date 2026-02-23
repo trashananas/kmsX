@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -6,14 +7,15 @@ import { X, Heart, MapPin, Info, ArrowLeft, RefreshCw, PackageOpen } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, limit, doc } from 'firebase/firestore';
 
 export default function SwipeMode() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const swipeQuery = useMemoFirebase(() => {
     return query(
@@ -25,16 +27,35 @@ export default function SwipeMode() {
 
   const { data: items, isLoading } = useCollection(swipeQuery);
 
+  const handleLike = useCallback((item: any) => {
+    if (!user || !item) return;
+    
+    const favRef = doc(firestore, 'users', user.uid, 'favorites', item.id);
+    setDocumentNonBlocking(favRef, {
+      itemId: item.id,
+      title: item.title,
+      imageUrl: item.imageUrls?.[0] || '',
+      condition: item.condition || '',
+      locationName: item.locationName || '',
+      createdAt: new Date().toISOString()
+    }, { merge: true });
+  }, [firestore, user]);
+
   const handleSwipe = useCallback((dir: 'left' | 'right') => {
-    if (direction) return; // Prevent double swipes
+    if (direction) return;
+    
+    const currentItem = items?.[currentIndex];
+    if (dir === 'right' && currentItem) {
+      handleLike(currentItem);
+    }
+
     setDirection(dir);
     setTimeout(() => {
       setDirection(null);
       setCurrentIndex(prev => prev + 1);
     }, 400);
-  }, [direction]);
+  }, [direction, items, currentIndex, handleLike]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') handleSwipe('left');
@@ -44,7 +65,6 @@ export default function SwipeMode() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSwipe]);
 
-  // Touch handlers
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
   };
@@ -54,7 +74,7 @@ export default function SwipeMode() {
     const touchEnd = e.changedTouches[0].clientX;
     const delta = touchStart - touchEnd;
 
-    if (Math.abs(delta) > 50) { // Threshold for swipe
+    if (Math.abs(delta) > 50) {
       if (delta > 0) handleSwipe('left');
       else handleSwipe('right');
     }
@@ -93,7 +113,6 @@ export default function SwipeMode() {
 
   return (
     <div className="fixed inset-0 top-16 bg-background flex flex-col z-40 select-none">
-      {/* Header */}
       <div className="p-4 flex items-center justify-between border-b bg-white">
         <Link href="/items">
           <Button variant="ghost" size="sm" className="gap-2">
@@ -105,14 +124,16 @@ export default function SwipeMode() {
           <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Лента открытий</p>
           <h1 className="text-sm font-medium text-muted-foreground">Свайпайте или используйте стрелки</h1>
         </div>
-        <div className="w-20" />
+        <Link href="/favorites">
+          <Button variant="ghost" size="sm" className="gap-2 text-primary">
+            Лайки
+            <Heart className="w-4 h-4 fill-primary" />
+          </Button>
+        </Link>
       </div>
 
-      {/* Swipe Container */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
         <div className="flex items-center gap-4 md:gap-8 w-full max-w-4xl justify-center">
-          
-          {/* Left Button (Visible on md screens and up) */}
           <Button 
             onClick={() => handleSwipe('left')}
             variant="outline" 
@@ -121,7 +142,6 @@ export default function SwipeMode() {
             <X className="w-8 h-8" />
           </Button>
 
-          {/* Swipe Card */}
           <div 
             className={`relative w-full max-w-[360px] aspect-[3/4.5] rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-white transition-all duration-400 ease-out cursor-grab active:cursor-grabbing
               ${direction === 'left' ? '-translate-x-[150%] rotate-[-20deg] opacity-0' : ''}
@@ -139,7 +159,6 @@ export default function SwipeMode() {
               data-ai-hint="item photo"
             />
             
-            {/* Overlays */}
             {direction === 'right' && (
               <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center z-50">
                 <div className="border-8 border-emerald-500 text-emerald-500 font-black text-6xl px-8 py-4 rounded-3xl rotate-[-15deg] uppercase">
@@ -155,7 +174,6 @@ export default function SwipeMode() {
               </div>
             )}
 
-            {/* Info Overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent text-white">
               <div className="flex items-end justify-between mb-2">
                 <div className="flex-1 pr-4">
@@ -177,7 +195,6 @@ export default function SwipeMode() {
             </div>
           </div>
 
-          {/* Right Button (Visible on md screens and up) */}
           <Button 
             onClick={() => handleSwipe('right')}
             className="hidden md:flex w-16 h-16 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-lg p-0 shrink-0"
@@ -187,7 +204,6 @@ export default function SwipeMode() {
         </div>
       </div>
 
-      {/* Mobile Control buttons (Visible only on small screens) */}
       <div className="md:hidden p-8 flex items-center justify-center gap-6 bg-background">
         <Button 
           onClick={() => handleSwipe('left')}

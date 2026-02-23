@@ -1,10 +1,16 @@
 
+"use client";
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, Heart } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface Item {
   id: string;
@@ -17,6 +23,45 @@ interface Item {
 }
 
 export default function ItemCard({ item }: { item: Item }) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const favRef = useMemoFirebase(() => {
+    if (!user || !item.id) return null;
+    return doc(firestore, 'users', user.uid, 'favorites', item.id);
+  }, [firestore, user, item.id]);
+
+  const { data: favorite } = useDoc(favRef);
+  const isLiked = !!favorite;
+
+  const toggleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toast({
+        title: "Нужна авторизация",
+        description: "Войдите, чтобы добавлять вещи в избранное.",
+      });
+      return;
+    }
+
+    if (!favRef) return;
+
+    if (isLiked) {
+      deleteDocumentNonBlocking(favRef);
+    } else {
+      setDocumentNonBlocking(favRef, {
+        itemId: item.id,
+        title: item.title,
+        imageUrl: item.image,
+        condition: item.condition,
+        locationName: item.location,
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+    }
+  };
+
   return (
     <Card className="overflow-hidden group border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
       <Link href={`/items/${item.id}`} className="block relative aspect-[4/5] overflow-hidden">
@@ -33,8 +78,16 @@ export default function ItemCard({ item }: { item: Item }) {
           </Badge>
         </div>
         <div className="absolute top-3 right-3 z-10">
-          <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full bg-black/10 text-white hover:bg-black/20 backdrop-blur-sm">
-            <Heart className="w-4 h-4" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleLike}
+            className={cn(
+              "w-8 h-8 rounded-full transition-all backdrop-blur-sm",
+              isLiked ? "bg-primary text-white" : "bg-black/10 text-white hover:bg-black/20"
+            )}
+          >
+            <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
           </Button>
         </div>
         <div className="absolute bottom-3 left-3 z-10">
@@ -54,9 +107,11 @@ export default function ItemCard({ item }: { item: Item }) {
           <span className="mx-1">•</span>
           <span>{item.distance}</span>
         </div>
-        <Button className="w-full rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-all shadow-none">
-          Подробнее
-        </Button>
+        <Link href={`/items/${item.id}`}>
+          <Button className="w-full rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-white transition-all shadow-none">
+            Подробнее
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );

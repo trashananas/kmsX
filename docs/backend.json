@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -170,6 +171,37 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "Favorite": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Favorite",
+      "type": "object",
+      "description": "A record of an item that a user has 'liked' or favorited.",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "description": "Reference to the ItemListing ID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Denormalized item title for listing purposes."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Denormalized item image URL for listing purposes."
+        },
+        "condition": {
+          "type": "string"
+        },
+        "locationName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["itemId", "title", "imageUrl", "createdAt"]
     }
   },
   "auth": {
@@ -187,11 +219,31 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores individual user profiles. The `userId` matches `request.auth.uid`. Some fields (`username`, `profilePictureUrl`, `locationName`, `latitude`, `longitude`) are publicly readable for item browsing and proximity searches, while others (`email`) are private to the owner.",
+          "description": "Stores individual user profiles.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user profile, corresponding to Firebase Authentication's UID."
+              "description": "The unique identifier for the user profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/favorites/{itemId}",
+        "definition": {
+          "entityName": "Favorite",
+          "schema": {
+            "$ref": "#/backend/entities/Favorite"
+          },
+          "description": "Stores a user's favorited items.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who liked the item."
+            },
+            {
+              "name": "itemId",
+              "description": "The ID of the favorited item."
             }
           ]
         }
@@ -203,7 +255,7 @@
           "schema": {
             "$ref": "#/backend/entities/Category"
           },
-          "description": "Stores global, static categories for item classification. Read-only for all authenticated users; write access is restricted to administrators defined in `/roles_admin`.",
+          "description": "Stores global item categories.",
           "params": [
             {
               "name": "categoryId",
@@ -219,7 +271,7 @@
           "schema": {
             "$ref": "#/backend/entities/ItemListing"
           },
-          "description": "Stores all item listings. This collection leverages the `status` field for structural segregation of authorization; only items with `status: 'available'` are publicly browsable. Write/update access is strictly limited to the `ownerId` of the document, which must match `request.auth.uid`. Includes denormalized `ownerId` for authorization independence and simplified security rules.",
+          "description": "Stores all item listings.",
           "params": [
             {
               "name": "itemListingId",
@@ -235,7 +287,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "A sentinel collection to store administrator UIDs. The mere existence of a document at `/roles_admin/{userId}` grants administrative privileges (e.g., to create/update categories) to the corresponding `userId`. This implements a Database Access Control (DBAC) model using 'Existence over Content'.",
+          "description": "A sentinel collection to store administrator UIDs.",
           "params": [
             {
               "name": "userId",
@@ -245,6 +297,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure for Polochka Exchange prioritizes secure, scalable, and debuggable authorization by strictly adhering to the core design principles. \n\n**Authorization Independence (CRITICAL):** This structure achieves authorization independence primarily through denormalization. Each `ItemListing` document explicitly contains an `ownerId` field, which directly corresponds to the `UserProfile` `id` of the listing creator. This allows Firestore security rules to verify ownership directly using `request.auth.uid == resource.data.ownerId` for read/write operations on listings, completely eliminating the need for expensive and complex `get()` calls to parent or related collections. Similarly, `UserProfile` documents are path-based (`/users/{userId}`), making `request.auth.uid == userId` the direct authorization check. For administrative roles, a dedicated `/roles_admin/{userId}` collection uses 'existence over content' for authorization, which is atomic and avoids `get()` calls for role checking.\n\n**QAPs (Rules are not Filters):** The structure facilitates Query Access Patterns (QAPs) by using structural segregation and explicit state modeling. \n*   **Global Item Browsing:** All item listings are stored in a single top-level collection `/item_listings/{itemListingId}`. The crucial `status` field (e.g., 'available', 'draft', 'archived') in the `ItemListing` entity is used to manage security posture. When users browse public listings, they will issue queries explicitly filtering by status, e.g., `db.collection('item_listings').where('status', '==', 'available')`. Security rules then enforce that only documents matching `status == 'available'` are readable by non-owners, ensuring that rules do not implicitly filter query results, but rather validate explicit client requests. This makes the authorization intent clear and simplifies rule logic.\n*   **User-Specific Item Management:** A user can retrieve all their own listings (regardless of status) by querying `db.collection('item_listings').where('ownerId', '==', request.auth.uid)`. Rules grant full read/write access to the owner based on the `ownerId` field.\n*   **Category Listing:** Categories are stored in `/categories/{categoryId}`. As these are global and mostly static, rules allow read access to all authenticated users for browsing, and write access only to administrators.\n\n**Structural Segregation and Access Modeling:**\n*   **User Profiles (`/users/{userId}`):** Follows the 'Private Data' and 'Hierarchical Paths for User-Owned Data' principles. Each user's profile is directly accessible via their UID, making ownership explicit. Public fields (e.g., username, profile picture, location for proximity searches) can be read by others, while sensitive data (e.g., email) is restricted to the owner.\n*   **Categories (`/categories/{categoryId}`):** Adheres to 'Structural Segregation' as a top-level collection for global, administrative data. Its uniform read-only security posture for most users simplifies rules.\n*   **Item Listings (`/item_listings/{itemListingId}`):** While not a subcollection of `/users/{userId}`, it maintains strong ownership through `ownerId`. This top-level approach facilitates global browsing queries (e.g., location-aware search) without requiring complex fan-out queries across user subcollections. The `status` field provides internal 'Structural Segregation' by differentiating public from private/draft items.\n*   **Admin Roles (`/roles_admin/{userId}`):** Implements 'Global Roles (DBAC)' via 'Existence over Content', providing a clear and efficient way to assign administrative privileges for tasks like category management without custom claims or complex data structures."
+    "reasoning": "Standard structure for ownership and public visibility."
   }
 }

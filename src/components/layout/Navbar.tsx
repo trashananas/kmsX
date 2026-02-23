@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, PlusCircle, Compass, Layers, User, Zap, LogOut } from 'lucide-react';
+import { Search, PlusCircle, Compass, Layers, User, Zap, LogOut, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
@@ -20,6 +21,7 @@ const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
   { label: 'Свайп', href: '/swipe', icon: Zap },
   { label: 'Категории', href: '/categories', icon: Layers },
+  { label: 'Лайки', href: '/favorites', icon: Heart },
 ];
 
 export default function Navbar() {
@@ -98,6 +100,11 @@ export default function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link href="/items?owner=me" className="cursor-pointer">
                     Мои объявления
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/favorites" className="cursor-pointer">
+                    Избранное
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

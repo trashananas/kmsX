@@ -1,79 +1,43 @@
-/**
- * POLOCHKA EXCHANGE - FIRESTORE SECURITY RULES
- *
- * CORE PHILOSOPHY:
- * This ruleset implements a robust ownership-based security model combined with role-based 
- * access control for administrative functions. The primary goal is to ensure that users 
- * have full control over their own profiles and item listings while maintaining a public 
- * marketplace for "available" goods. 
- */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- GLOBAL HELPER FUNCTIONS ---
-
-    /** Checks if the request is from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the provided UID matches the authenticated user's UID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Checks if the document belongs to the user and exists. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    /** Checks for administrative privileges via the roles_admin collection. */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // --- COLLECTION RULES ---
-
-    /**
-     * @description Rules for user profiles. Public fields are readable by everyone.
-     * @path /users/{userId}
-     */
     match /users/{userId} {
       allow get, list: if true; 
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+      
+      match /favorites/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
-    /**
-     * @description Rules for item categories. Readable by all.
-     * @path /categories/{categoryId}
-     */
     match /categories/{categoryId} {
       allow get, list: if true; 
-      // Разрешаем создавать категории любому авторизованному пользователю по вашей просьбе
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for item listings. Publicly browsable.
-     * @path /item_listings/{itemListingId}
-     */
     match /item_listings/{itemListingId} {
       allow get, list: if true; 
-      
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if isExistingOwner(resource.data.ownerId);
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
-    /**
-     * @description Rules for admin roles.
-     * @path /roles_admin/{userId}
-     */
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
