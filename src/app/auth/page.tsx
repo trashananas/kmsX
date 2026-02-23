@@ -1,21 +1,51 @@
-
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Layers, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth, initiateEmailSignIn, initiateEmailSignUp } from '@/firebase';
+import { toast } from '@/hooks/use-toast';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const auth = useAuth();
+  const router = useRouter();
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => setLoading(false), 2000);
+    try {
+      initiateEmailSignIn(auth, email, password);
+      // Auth state listener in FirebaseProvider will handle the redirect if successful
+      toast({ title: "Вход выполнен", description: "Добро пожаловать обратно!" });
+      router.push('/items');
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Ошибка", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      initiateEmailSignUp(auth, email, password);
+      toast({ title: "Аккаунт создан", description: "Теперь вы можете размещать объявления." });
+      router.push('/items');
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Ошибка", description: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,23 +71,37 @@ export default function AuthPage() {
                 <CardTitle className="text-xl">Войти</CardTitle>
                 <CardDescription>Введите данные для доступа к вашему аккаунту.</CardDescription>
               </CardHeader>
-              <form onSubmit={handleAuth}>
+              <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4 p-8">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="email" type="email" placeholder="name@example.com" className="pl-10 h-12 rounded-xl" required />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="name@example.com" 
+                        className="pl-10 h-12 rounded-xl" 
+                        required 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Пароль</Label>
-                      <Button variant="link" size="sm" className="px-0 font-normal h-auto">Забыли пароль?</Button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="password" type="password" className="pl-10 h-12 rounded-xl" required />
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        className="pl-10 h-12 rounded-xl" 
+                        required 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -81,27 +125,49 @@ export default function AuthPage() {
                 <CardTitle className="text-xl">Создать аккаунт</CardTitle>
                 <CardDescription>Присоединяйтесь к сообществу сегодня.</CardDescription>
               </CardHeader>
-              <form onSubmit={handleAuth}>
+              <form onSubmit={handleSignUp}>
                 <CardContent className="space-y-4 p-8">
                   <div className="space-y-2">
                     <Label htmlFor="name">Полное имя</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="name" placeholder="Иван Иванов" className="pl-10 h-12 rounded-xl" required />
+                      <Input 
+                        id="name" 
+                        placeholder="Иван Иванов" 
+                        className="pl-10 h-12 rounded-xl" 
+                        required 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reg-email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="reg-email" type="email" placeholder="name@example.com" className="pl-10 h-12 rounded-xl" required />
+                      <Input 
+                        id="reg-email" 
+                        type="email" 
+                        placeholder="name@example.com" 
+                        className="pl-10 h-12 rounded-xl" 
+                        required 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reg-password">Пароль</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="reg-password" type="password" className="pl-10 h-12 rounded-xl" required />
+                      <Input 
+                        id="reg-password" 
+                        type="password" 
+                        className="pl-10 h-12 rounded-xl" 
+                        required 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
                     </div>
                   </div>
                 </CardContent>

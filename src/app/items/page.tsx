@@ -1,32 +1,33 @@
-
 "use client";
 
 import { useState } from 'react';
-import { Search, Filter, MapPin } from 'lucide-react';
+import { Search, Filter, MapPin, PackageOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ItemCard from '@/components/items/ItemCard';
 import CategoryFilter from '@/components/items/CategoryFilter';
-
-// Mock Data
-const MOCK_ITEMS = [
-  { id: '1', title: 'Винтажная камера', category: 'Электроника', location: 'Москва', distance: '1.2 км', image: 'https://picsum.photos/seed/item1/600/600', condition: 'Отличное' },
-  { id: '2', title: 'Стул в стиле модерн', category: 'Мебель', location: 'Санкт-Петербург', distance: '3.5 км', image: 'https://picsum.photos/seed/item2/600/600', condition: 'Как новый' },
-  { id: '3', title: 'Sapiens: Краткая история', category: 'Книги', location: 'Екатеринбург', distance: '0.8 км', image: 'https://picsum.photos/seed/item3/600/600', condition: 'Б/У' },
-  { id: '4', title: 'Горный велосипед 24"', category: 'Спорт', location: 'Казань', distance: '5.1 км', image: 'https://picsum.photos/seed/item4/600/600', condition: 'Хорошее' },
-  { id: '5', title: 'Lego Star Wars', category: 'Игрушки', location: 'Сочи', distance: '1.5 км', image: 'https://picsum.photos/seed/item5/600/600', condition: 'Новый' },
-  { id: '6', title: 'Шерстяное пальто', category: 'Одежда', location: 'Новосибирск', distance: '7.2 км', image: 'https://picsum.photos/seed/item6/600/600', condition: 'Как новое' },
-];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function BrowseItems() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
+  const firestore = useFirestore();
 
-  const filteredItems = MOCK_ITEMS.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'Все' || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const itemsQuery = useMemoFirebase(() => {
+    const baseRef = collection(firestore, 'listings');
+    if (selectedCategory === 'Все') {
+      return query(baseRef, where('status', '==', 'active'));
+    }
+    return query(baseRef, where('status', '==', 'active'), where('categoryId', '==', selectedCategory));
+  }, [firestore, selectedCategory]);
+
+  const { data: items, isLoading } = useCollection(itemsQuery);
+
+  const filteredItems = items?.filter(item => 
+    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   return (
     <div className="container px-4 py-8 max-w-7xl mx-auto">
@@ -45,7 +46,7 @@ export default function BrowseItems() {
           <div className="flex gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2 px-4 h-12 bg-muted/30 rounded-xl text-sm font-medium border border-transparent hover:border-primary/20 transition-all cursor-pointer">
               <MapPin className="w-4 h-4 text-primary" />
-              <span>Москва (5 км)</span>
+              <span>Весь мир</span>
             </div>
             <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
               <Filter className="w-4 h-4" />
@@ -54,7 +55,6 @@ export default function BrowseItems() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Categories Sidebar */}
           <aside className="w-full lg:w-64 shrink-0">
             <div className="sticky top-24">
               <h2 className="text-lg font-bold mb-4 px-2">Категории</h2>
@@ -65,36 +65,41 @@ export default function BrowseItems() {
             </div>
           </aside>
 
-          {/* Items Grid */}
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold font-headline">
                 {selectedCategory === 'Все' ? 'Все вещи' : selectedCategory}
-                <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length} результатов)</span>
+                {!isLoading && <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length})</span>}
               </h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Сортировка:</span>
-                <select className="bg-transparent font-medium text-foreground outline-none cursor-pointer">
-                  <option>По близости</option>
-                  <option>Сначала новые</option>
-                  <option>По состоянию</option>
-                </select>
-              </div>
             </div>
 
-            {filteredItems.length > 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <Skeleton key={i} className="aspect-[4/5] rounded-2xl" />
+                ))}
+              </div>
+            ) : filteredItems.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredItems.map(item => (
-                  <ItemCard key={item.id} item={item} />
+                  <ItemCard key={item.id} item={{
+                    id: item.id,
+                    title: item.title,
+                    category: item.categoryId,
+                    location: item.address || 'Не указано',
+                    distance: 'Рядом',
+                    image: item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/600',
+                    condition: item.itemCondition
+                  }} />
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-[2rem] border border-dashed">
                 <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-10 h-10 text-muted-foreground/50" />
+                  <PackageOpen className="w-10 h-10 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Ничего не найдено</h3>
-                <p className="text-muted-foreground">Попробуйте изменить параметры поиска или фильтры.</p>
+                <h3 className="text-xl font-bold mb-2">Здесь пока пусто</h3>
+                <p className="text-muted-foreground">Будьте первым, кто разместит объявление в этой категории!</p>
               </div>
             )}
           </div>
