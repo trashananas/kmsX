@@ -27,19 +27,22 @@ export default function ItemCard({ item }: { item: Item }) {
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 z-10">
           <Badge className="bg-white/90 text-primary backdrop-blur-sm border-none shadow-sm hover:bg-white">
             {item.condition}
           </Badge>
         </div>
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 z-10">
           <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full bg-black/10 text-white hover:bg-black/20 backdrop-blur-sm">
             <Heart className="w-4 h-4" />
           </Button>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent text-white md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-          <p className="text-xs font-medium uppercase tracking-wider">{item.category}</p>
+        <div className="absolute bottom-3 left-3 z-10">
+          <Badge className="bg-black/50 text-white backdrop-blur-md border-none text-[10px] font-bold uppercase tracking-wider py-1 px-3">
+            {item.category}
+          </Badge>
         </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </Link>
       <CardContent className="p-4">
         <Link href={`/items/${item.id}`}>
