@@ -273,7 +273,7 @@ const SidebarTrigger = React.forwardRef<
       <PanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
-  )
+  );
 })
 SidebarTrigger.displayName = "SidebarTrigger"
 
@@ -640,7 +640,7 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  const [skeletonWidth, setSkeletonWidth] = React.useState("70%");
+  const [skeletonWidth, setSkeletonWidth] = React.useState<string | null>(null);
   
   React.useEffect(() => {
     setSkeletonWidth(`${Math.floor(Math.random() * 40) + 50}%`);
@@ -664,7 +664,7 @@ const SidebarMenuSkeleton = React.forwardRef<
         data-sidebar="menu-skeleton-text"
         style={
           {
-            "--skeleton-width": skeletonWidth,
+            "--skeleton-width": skeletonWidth || "70%",
           } as React.CSSProperties
         }
       />
