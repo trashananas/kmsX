@@ -19,18 +19,21 @@ export default function SwipeMode() {
 
   const swipeQuery = useMemoFirebase(() => {
     const baseRef = collection(firestore, 'item_listings');
-    // Базовый фильтр: только доступные вещи
-    let q = query(baseRef, where('status', '==', 'available'));
-    
-    // Если пользователь авторизован, исключаем его собственные вещи
-    if (user) {
-      q = query(q, where('ownerId', '!=', user.uid));
-    }
-    
-    return query(q, limit(30));
-  }, [firestore, user?.uid]);
+    // Фильтруем только доступные вещи
+    // Если пользователь авторизован, мы могли бы использовать != для исключения своих вещей,
+    // но для стабильности правил и индексов сначала убедимся в работе базового запроса.
+    const q = query(
+      baseRef, 
+      where('status', '==', 'available'),
+      limit(50)
+    );
+    return q;
+  }, [firestore]);
 
-  const { data: items, isLoading } = useCollection(swipeQuery);
+  const { data: rawItems, isLoading } = useCollection(swipeQuery);
+
+  // Фильтруем свои вещи на стороне клиента, чтобы избежать сложностей с индексами и правилами !=
+  const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
 
   const handleLike = useCallback((item: any) => {
     if (!user || !item) return;
@@ -47,7 +50,7 @@ export default function SwipeMode() {
   }, [firestore, user]);
 
   const handleSwipe = useCallback((dir: 'left' | 'right') => {
-    if (direction || !items) return;
+    if (direction || !items.length || currentIndex >= items.length) return;
     
     const currentItem = items[currentIndex];
     if (dir === 'right' && currentItem) {
@@ -94,9 +97,9 @@ export default function SwipeMode() {
     );
   }
 
-  const currentItem = items?.[currentIndex];
+  const currentItem = items[currentIndex];
 
-  if (!items || items.length === 0 || currentIndex >= items.length) {
+  if (!items.length || currentIndex >= items.length) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4 text-center">
         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">

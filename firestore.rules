@@ -3,6 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Вспомогательные функции
     function isSignedIn() {
       return request.auth != null;
     }
@@ -15,8 +16,9 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
+    // Правила для профилей пользователей и их лайков
     match /users/{userId} {
-      allow get, list: if true; 
+      allow read: if true; 
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
@@ -26,18 +28,22 @@ service cloud.firestore {
       }
     }
 
+    // Правила для категорий (чтение всем, создание авторизованным)
     match /categories/{categoryId} {
-      allow get, list: if true; 
+      allow read: if true; 
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
+    // Правила для объявлений (чтение всем, управление владельцем)
+    // Добавлен комментарий для триггера деплоя: Fix permissions for list operation
     match /item_listings/{itemListingId} {
-      allow get, list: if true; 
+      allow read: if true; 
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
+    // Правила для админских ролей
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
