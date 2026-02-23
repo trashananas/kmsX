@@ -136,6 +136,7 @@ export default function SwipeMode() {
               fill 
               className="object-cover pointer-events-none"
               priority
+              data-ai-hint="item photo"
             />
             
             {/* Overlays */}
@@ -167,7 +168,7 @@ export default function SwipeMode() {
                     <span>{currentItem.locationName || 'Мир'}</span>
                   </div>
                 </div>
-                <Link href={`/items/${currentItem.id}`}>
+                <Link href={`/items/${currentItem.id}?from=swipe`}>
                   <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white/10 border-white/20 text-white hover:bg-white/20 shrink-0">
                     <Info className="w-6 h-6" />
                   </Button>
