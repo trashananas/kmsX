@@ -1,4 +1,3 @@
-
 "use client";
 
 import { 
@@ -8,28 +7,38 @@ import {
   Home, 
   Gamepad2, 
   Bike, 
-  Baby, 
-  Paintbrush,
-  Camera,
-  Music
+  LayoutGrid,
+  PackageSearch
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const categories = [
-  { name: 'Одежда', icon: Shirt, count: 124, color: 'bg-orange-100 text-orange-600' },
-  { name: 'Электроника', icon: Smartphone, count: 86, color: 'bg-blue-100 text-blue-600' },
-  { name: 'Книги', icon: Book, count: 210, color: 'bg-emerald-100 text-emerald-600' },
-  { name: 'Мебель', icon: Home, count: 45, color: 'bg-amber-100 text-amber-600' },
-  { name: 'Игрушки', icon: Gamepad2, count: 92, color: 'bg-purple-100 text-purple-600' },
-  { name: 'Спорт', icon: Bike, count: 34, color: 'bg-rose-100 text-rose-600' },
-  { name: 'Детские товары', icon: Baby, count: 78, color: 'bg-sky-100 text-sky-600' },
-  { name: 'Хобби', icon: Paintbrush, count: 56, color: 'bg-indigo-100 text-indigo-600' },
-  { name: 'Фототехника', icon: Camera, count: 23, color: 'bg-slate-100 text-slate-600' },
-  { name: 'Инструменты', icon: Music, count: 19, color: 'bg-teal-100 text-teal-600' },
-];
+const ICON_MAP: Record<string, any> = {
+  'Одежда': Shirt,
+  'Электроника': Smartphone,
+  'Книги': Book,
+  'Мебель': Home,
+  'Игрушки': Gamepad2,
+  'Спорт': Bike,
+};
+
+const COLOR_MAP: Record<string, string> = {
+  'Одежда': 'bg-orange-100 text-orange-600',
+  'Электроника': 'bg-blue-100 text-blue-600',
+  'Книги': 'bg-emerald-100 text-emerald-600',
+  'Мебель': 'bg-amber-100 text-amber-600',
+  'Игрушки': 'bg-purple-100 text-purple-600',
+  'Спорт': 'bg-rose-100 text-rose-600',
+};
 
 export default function CategoriesPage() {
+  const firestore = useFirestore();
+  const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
+  const { data: categories, isLoading } = useCollection(categoriesQuery);
+
   return (
     <div className="container px-4 py-12 max-w-5xl mx-auto">
       <div className="text-center mb-12">
@@ -37,21 +46,38 @@ export default function CategoriesPage() {
         <p className="text-muted-foreground">Выберите интересующий вас раздел, чтобы найти нужную вещь</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {categories.map((cat) => (
-          <Link key={cat.name} href={`/items?category=${encodeURIComponent(cat.name)}`}>
-            <Card className="border-none shadow-sm hover:shadow-md transition-all group cursor-pointer h-full">
-              <CardContent className="p-8 flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-2xl ${cat.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                  <cat.icon className="w-8 h-8" />
-                </div>
-                <h3 className="font-bold text-lg mb-1">{cat.name}</h3>
-                <p className="text-sm text-muted-foreground">{cat.count} объявлений</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-48 rounded-2xl" />
+          ))}
+        </div>
+      ) : categories && categories.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {categories.map((cat) => {
+            const Icon = ICON_MAP[cat.name] || LayoutGrid;
+            const color = COLOR_MAP[cat.name] || 'bg-muted text-muted-foreground';
+            return (
+              <Link key={cat.id} href={`/items?category=${cat.id}`}>
+                <Card className="border-none shadow-sm hover:shadow-md transition-all group cursor-pointer h-full">
+                  <CardContent className="p-8 flex flex-col items-center text-center">
+                    <div className={`w-16 h-16 rounded-2xl ${color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                      <Icon className="w-8 h-8" />
+                    </div>
+                    <h3 className="font-bold text-lg mb-1">{cat.name}</h3>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed">
+          <PackageSearch className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Категории не созданы</h2>
+          <p className="text-muted-foreground">Похоже, в базе данных еще нет категорий. Добавьте их через консоль Firebase.</p>
+        </div>
+      )}
     </div>
   );
 }

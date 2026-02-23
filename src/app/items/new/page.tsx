@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 export default function NewItemListing() {
   const router = useRouter();
@@ -28,9 +28,13 @@ export default function NewItemListing() {
     title: '',
     description: '',
     categoryId: '',
-    itemCondition: '',
-    address: '',
+    condition: '',
+    locationName: '',
   });
+
+  // Получаем реальные категории из базы
+  const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
+  const { data: categories } = useCollection(categoriesQuery);
 
   if (!user) {
     return (
@@ -48,12 +52,17 @@ export default function NewItemListing() {
     setLoading(true);
 
     try {
-      const listingsRef = collection(firestore, 'listings');
+      // Используем путь из backend.json: /item_listings
+      const listingsRef = collection(firestore, 'item_listings');
       const newDoc = {
-        ...formData,
-        userId: user.uid,
-        status: 'active',
-        imageUrls: [`https://picsum.photos/seed/${Math.random()}/600/800`], // Placeholder image
+        title: formData.title,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        condition: formData.condition,
+        locationName: formData.locationName,
+        ownerId: user.uid,
+        status: 'available',
+        imageUrls: [`https://picsum.photos/seed/${Math.random()}/600/800`], // Заглушка для фото (для MVP)
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         latitude: 0,
@@ -100,7 +109,6 @@ export default function NewItemListing() {
                 <span className="text-xs font-medium">Загрузить</span>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-wider font-bold">Пока используется случайное фото для примера.</p>
           </div>
 
           <div className="grid gap-4">
@@ -124,23 +132,24 @@ export default function NewItemListing() {
                     <SelectValue placeholder="Выберите категорию" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Одежда">Одежда</SelectItem>
-                    <SelectItem value="Электроника">Электроника</SelectItem>
-                    <SelectItem value="Книги">Книги</SelectItem>
-                    <SelectItem value="Мебель">Мебель</SelectItem>
-                    <SelectItem value="Игрушки">Игрушки</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                    {!categories?.length && (
+                      <SelectItem value="none" disabled>Категории не найдены</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="condition">Состояние</Label>
-                <Select onValueChange={(val) => setFormData({...formData, itemCondition: val})} required>
+                <Select onValueChange={(val) => setFormData({...formData, condition: val})} required>
                   <SelectTrigger className="h-12 rounded-xl">
                     <SelectValue placeholder="Состояние" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Новое">Абсолютно новая</SelectItem>
-                    <SelectItem value="Как новое">Как новая</SelectItem>
+                    <SelectItem value="Новое">Новое</SelectItem>
+                    <SelectItem value="Как новое">Как новое</SelectItem>
                     <SelectItem value="Хорошее">Хорошее</SelectItem>
                     <SelectItem value="Среднее">Среднее</SelectItem>
                   </SelectContent>
@@ -170,8 +179,8 @@ export default function NewItemListing() {
                 placeholder="Город или район" 
                 className="pl-10 h-12 rounded-xl" 
                 required 
-                value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
+                value={formData.locationName}
+                onChange={(e) => setFormData({...formData, locationName: e.target.value})}
               />
             </div>
           </div>

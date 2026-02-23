@@ -15,8 +15,8 @@ export default function SwipeMode() {
 
   const swipeQuery = useMemoFirebase(() => {
     return query(
-      collection(firestore, 'listings'),
-      where('status', '==', 'active'),
+      collection(firestore, 'item_listings'),
+      where('status', '==', 'available'),
       limit(20)
     );
   }, [firestore]);
@@ -109,7 +109,7 @@ export default function SwipeMode() {
                 <h2 className="text-3xl font-bold mb-1">{currentItem.title}</h2>
                 <div className="flex items-center gap-2 text-white/80 text-sm">
                   <MapPin className="w-4 h-4" />
-                  <span>{currentItem.address || 'Мир'}</span>
+                  <span>{currentItem.locationName || 'Мир'}</span>
                 </div>
               </div>
               <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20">

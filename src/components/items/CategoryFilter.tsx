@@ -1,4 +1,3 @@
-
 "use client";
 
 import { cn } from '@/lib/utils';
@@ -11,40 +10,61 @@ import {
   Bike, 
   LayoutGrid 
 } from 'lucide-react';
-
-const categories = [
-  { name: 'Все', icon: LayoutGrid },
-  { name: 'Одежда', icon: Shirt },
-  { name: 'Электроника', icon: Smartphone },
-  { name: 'Книги', icon: Book },
-  { name: 'Мебель', icon: Home },
-  { name: 'Игрушки', icon: Gamepad2 },
-  { name: 'Спорт', icon: Bike },
-];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 interface CategoryFilterProps {
-  selected: string;
-  onSelect: (name: string) => void;
+  selectedId: string;
+  onSelect: (id: string) => void;
 }
 
-export default function CategoryFilter({ selected, onSelect }: CategoryFilterProps) {
+const ICON_MAP: Record<string, any> = {
+  'Одежда': Shirt,
+  'Электроника': Smartphone,
+  'Книги': Book,
+  'Мебель': Home,
+  'Игрушки': Gamepad2,
+  'Спорт': Bike,
+};
+
+export default function CategoryFilter({ selectedId, onSelect }: CategoryFilterProps) {
+  const firestore = useFirestore();
+  const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
+  const { data: categories } = useCollection(categoriesQuery);
+
   return (
     <div className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 hide-scrollbar">
-      {categories.map((cat) => (
-        <button
-          key={cat.name}
-          onClick={() => onSelect(cat.name)}
-          className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap lg:w-full",
-            selected === cat.name 
-              ? "bg-primary text-white shadow-md shadow-primary/20 translate-x-1" 
-              : "bg-white text-muted-foreground hover:bg-muted/50 border border-transparent"
-          )}
-        >
-          <cat.icon className={cn("w-4 h-4", selected === cat.name ? "text-white" : "text-primary")} />
-          {cat.name}
-        </button>
-      ))}
+      <button
+        onClick={() => onSelect('all')}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap lg:w-full",
+          selectedId === 'all' 
+            ? "bg-primary text-white shadow-md shadow-primary/20 translate-x-1" 
+            : "bg-white text-muted-foreground hover:bg-muted/50 border border-transparent"
+        )}
+      >
+        <LayoutGrid className={cn("w-4 h-4", selectedId === 'all' ? "text-white" : "text-primary")} />
+        Все
+      </button>
+
+      {categories?.map((cat) => {
+        const Icon = ICON_MAP[cat.name] || LayoutGrid;
+        return (
+          <button
+            key={cat.id}
+            onClick={() => onSelect(cat.id)}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap lg:w-full",
+              selectedId === cat.id 
+                ? "bg-primary text-white shadow-md shadow-primary/20 translate-x-1" 
+                : "bg-white text-muted-foreground hover:bg-muted/50 border border-transparent"
+            )}
+          >
+            <Icon className={cn("w-4 h-4", selectedId === cat.id ? "text-white" : "text-primary")} />
+            {cat.name}
+          </button>
+        );
+      })}
     </div>
   );
 }

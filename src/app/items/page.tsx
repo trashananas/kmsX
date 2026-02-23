@@ -12,16 +12,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function BrowseItems() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const firestore = useFirestore();
 
   const itemsQuery = useMemoFirebase(() => {
-    const baseRef = collection(firestore, 'listings');
-    if (selectedCategory === 'Все') {
-      return query(baseRef, where('status', '==', 'active'));
+    const baseRef = collection(firestore, 'item_listings');
+    if (selectedCategoryId === 'all') {
+      return query(baseRef, where('status', '==', 'available'));
     }
-    return query(baseRef, where('status', '==', 'active'), where('categoryId', '==', selectedCategory));
-  }, [firestore, selectedCategory]);
+    return query(baseRef, where('status', '==', 'available'), where('categoryId', '==', selectedCategoryId));
+  }, [firestore, selectedCategoryId]);
 
   const { data: items, isLoading } = useCollection(itemsQuery);
 
@@ -32,7 +32,6 @@ export default function BrowseItems() {
   return (
     <div className="container px-4 py-8 max-w-7xl mx-auto">
       <div className="flex flex-col gap-8">
-        {/* Search & Location Bar */}
         <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-2xl shadow-sm border">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -59,8 +58,8 @@ export default function BrowseItems() {
             <div className="sticky top-24">
               <h2 className="text-lg font-bold mb-4 px-2">Категории</h2>
               <CategoryFilter 
-                selected={selectedCategory} 
-                onSelect={setSelectedCategory} 
+                selectedId={selectedCategoryId} 
+                onSelect={setSelectedCategoryId} 
               />
             </div>
           </aside>
@@ -68,7 +67,7 @@ export default function BrowseItems() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold font-headline">
-                {selectedCategory === 'Все' ? 'Все вещи' : selectedCategory}
+                {selectedCategoryId === 'all' ? 'Все вещи' : 'Результаты'}
                 {!isLoading && <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length})</span>}
               </h1>
             </div>
@@ -86,10 +85,10 @@ export default function BrowseItems() {
                     id: item.id,
                     title: item.title,
                     category: item.categoryId,
-                    location: item.address || 'Не указано',
+                    location: item.locationName || 'Не указано',
                     distance: 'Рядом',
                     image: item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/600',
-                    condition: item.itemCondition
+                    condition: item.condition
                   }} />
                 ))}
               </div>
