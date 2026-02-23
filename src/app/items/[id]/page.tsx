@@ -8,12 +8,12 @@ import {
   ChevronLeft, 
   MapPin, 
   Tag, 
-  Calendar, 
   User, 
   Trash2, 
   MessageCircle,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ItemDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -47,14 +58,12 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   const handleDelete = () => {
     if (!item || !user || item.ownerId !== user.uid) return;
     
-    if (confirm('Вы уверены, что хотите удалить это объявление?')) {
-      deleteDocumentNonBlocking(itemRef as any);
-      toast({
-        title: "Объявление удалено",
-        description: "Вещь больше не отображается в поиске.",
-      });
-      router.push('/items');
-    }
+    deleteDocumentNonBlocking(itemRef as any);
+    toast({
+      title: "Объявление удалено",
+      description: "Вещь больше не отображается в поиске.",
+    });
+    router.push('/items');
   };
 
   if (isLoading) {
@@ -168,14 +177,37 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
 
           <div className="mt-10 flex gap-4">
             {isOwner ? (
-              <Button 
-                variant="destructive" 
-                className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-destructive/20"
-                onClick={handleDelete}
-              >
-                <Trash2 className="w-5 h-5" />
-                Удалить вещь
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-destructive/20"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    Удалить вещь
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[2rem]">
+                  <AlertDialogHeader>
+                    <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
+                      <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <AlertDialogTitle className="text-xl">Вы уверены?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-muted-foreground">
+                      Это действие нельзя будет отменить. Ваше объявление «{item.title}» будет удалено из базы данных навсегда.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <AlertDialogCancel className="rounded-xl h-12 border-2">Отмена</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDelete}
+                      className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"
+                    >
+                      Да, удалить
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             ) : (
               <Button className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-primary/20">
                 <MessageCircle className="w-5 h-5" />
