@@ -41,28 +41,27 @@ service cloud.firestore {
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get, list: if true; // Разрешаем публичный просмотр профилей для обмена
+      allow get, list: if true; 
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for item categories. Categories are managed by admins but readable by all.
+     * @description Rules for item categories. Readable by all.
      * @path /categories/{categoryId}
      */
     match /categories/{categoryId} {
-      allow get, list: if true; // Категории публичны
+      allow get, list: if true; 
       allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Rules for item listings. Publicly browsable if 'available'.
+     * @description Rules for item listings. Publicly browsable.
      * @path /item_listings/{itemListingId}
      */
     match /item_listings/{itemListingId} {
-      allow get: if resource.data.status == 'available' || isOwner(resource.data.ownerId);
-      allow list: if true; // Клиенты должны фильтровать по статусу 'available'
+      allow get, list: if true; 
       
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isExistingOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId;
