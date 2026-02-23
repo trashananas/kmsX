@@ -79,7 +79,9 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   , [firestore, item?.categoryId]);
   const { data: category } = useDoc(categoryRef);
 
-  const availableQuantity = item ? (item.quantity !== undefined && item.quantity !== null ? item.quantity : 1) : 0;
+  const availableQuantity = item 
+    ? (typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 1) 
+    : 0;
 
   const handleDelete = () => {
     if (!item || !user || item.ownerId !== user.uid) return;
