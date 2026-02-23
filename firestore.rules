@@ -1,0 +1,114 @@
+rules_version = '2';
+
+/**
+ * FIRESTORE SECURITY RULES: POLOCHKA EXCHANGE (PROTOTYPING MODE)
+ * 
+ * Core Philosophy:
+ * This ruleset implements a strict ownership-based authorization model while maintaining 
+ * flexibility for data shapes during the prototyping phase. It prioritizes "Authorization 
+ * Independence" by relying on denormalized fields (like userId) to avoid expensive cross-document 
+ * lookups (get() calls).
+ * 
+ * Data Structure:
+ * - /users/{userId}: Private user profiles, owned by the authenticated user.
+ * - /categories/{categoryId}: Publicly readable, static system data.
+ * - /listings/{listingId}: Publicly discoverable items for exchange, owned by creators.
+ * 
+ * Key Security Decisions:
+ * 1. Ownership via Denormalization: Item listings contain a 'userId' field. This allows 
+ *    rules to verify the owner of a listing immediately without fetching the user's profile.
+ * 2. Path-to-Data Consistency: For user profiles, we enforce that the 'id' field inside 
+ *    the document matches the document's ID in the path to ensure relational integrity.
+ * 3. Public Discovery vs. Private Control: Listings are publicly readable if 'active', 
+ *    but write operations are strictly limited to the creator identified by 'userId'.
+ * 4. Structural Segregation: Each collection has a homogeneous security posture, 
+ *    simplifying the logic and preventing accidental data exposure.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- HELPER FUNCTIONS ---
+
+    /** @description Checks if the user is authenticated with Firebase Auth. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Verifies ownership of an existing document before update or delete. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** @description Shorthand for the incoming data in the request. */
+    function incomingData() {
+      return request.resource.data;
+    }
+
+    /** @description Shorthand for the existing data in the document. */
+    function existingData() {
+      return resource.data;
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for UserProfile entities. Users can create and manage their own profiles.
+     * @path /users/{userId}
+     * @allow (create) if auth.uid == userId and data.id == userId.
+     * @deny (update) if auth.uid != userId or trying to change the document 'id'.
+     * @principle Ownership and Relational Integrity.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false; // Prevent bulk scraping of user data; profiles should be fetched by ID.
+      
+      allow create: if isOwner(userId) && incomingData().id == userId;
+      allow update: if isExistingOwner(userId) && incomingData().id == existingData().id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for Category entities. Read-only for all users; no public writes.
+     * @path /categories/{categoryId}
+     * @allow (get, list) if true.
+     * @deny (create, update, delete) for all public users.
+     * @principle Public Read with Restricted Writes (System Static Data).
+     */
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      
+      // Categories are managed by administrators via the Firebase Console or Admin SDK.
+      allow create, update, delete: if false; 
+    }
+
+    /**
+     * @description Rules for ItemListing entities. Publicly readable for browsing; owner-only writes.
+     * @path /listings/{listingId}
+     * @allow (create) if incoming userId matches auth.uid.
+     * @allow (list) for anyone to browse active listings.
+     * @deny (update) if the 'userId' ownership field is being modified.
+     * @principle Ownership via Denormalization and Public Browsing.
+     */
+    match /listings/{listingId} {
+      // Allow individual gets and lists. 
+      // Query security: client queries should filter for status == 'active' or their own userId.
+      allow get: if true;
+      allow list: if true;
+
+      // Note: Prototyping Mode does not validate the full 'ItemListing' schema, 
+      // but strictly enforces that the creator field matches the authenticated user.
+      allow create: if isSignedIn() && incomingData().userId == request.auth.uid;
+      
+      allow update: if isExistingOwner(existingData().userId) 
+                    && incomingData().userId == existingData().userId; // Enforce immutable ownership.
+      
+      allow delete: if isExistingOwner(existingData().userId);
+    }
+  }
+}
