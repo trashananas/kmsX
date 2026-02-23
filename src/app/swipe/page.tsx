@@ -18,12 +18,17 @@ export default function SwipeMode() {
   const { user } = useUser();
 
   const swipeQuery = useMemoFirebase(() => {
-    return query(
-      collection(firestore, 'item_listings'),
-      where('status', '==', 'available'),
-      limit(20)
-    );
-  }, [firestore]);
+    const baseRef = collection(firestore, 'item_listings');
+    // Базовый фильтр: только доступные вещи
+    let q = query(baseRef, where('status', '==', 'available'));
+    
+    // Если пользователь авторизован, исключаем его собственные вещи
+    if (user) {
+      q = query(q, where('ownerId', '!=', user.uid));
+    }
+    
+    return query(q, limit(30));
+  }, [firestore, user?.uid]);
 
   const { data: items, isLoading } = useCollection(swipeQuery);
 
@@ -42,9 +47,9 @@ export default function SwipeMode() {
   }, [firestore, user]);
 
   const handleSwipe = useCallback((dir: 'left' | 'right') => {
-    if (direction) return;
+    if (direction || !items) return;
     
-    const currentItem = items?.[currentIndex];
+    const currentItem = items[currentIndex];
     if (dir === 'right' && currentItem) {
       handleLike(currentItem);
     }
@@ -98,7 +103,7 @@ export default function SwipeMode() {
           <PackageOpen className="w-10 h-10 text-primary" />
         </div>
         <h2 className="text-2xl font-bold mb-2">Вещи закончились!</h2>
-        <p className="text-muted-foreground mb-8">Вы просмотрели все доступные варианты или база пока пуста.</p>
+        <p className="text-muted-foreground mb-8">Вы просмотрели все доступные варианты от других пользователей.</p>
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => setCurrentIndex(0)}>
             Начать сначала
