@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, UploadCloud, ChevronLeft } from 'lucide-react';
+import { MapPin, UploadCloud, ChevronLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 import { 
   Select, 
   SelectContent, 
@@ -17,13 +18,16 @@ import {
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useFirestore, useUser, addDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 
 export default function NewItemListing() {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [loading, setLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -32,7 +36,6 @@ export default function NewItemListing() {
     locationName: '',
   });
 
-  // Получаем реальные категории из базы
   const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
   const { data: categories } = useCollection(categoriesQuery);
 
@@ -47,12 +50,27 @@ export default function NewItemListing() {
     );
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setPreviewImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Используем путь из backend.json: /item_listings
       const listingsRef = collection(firestore, 'item_listings');
       const newDoc = {
         title: formData.title,
@@ -62,7 +80,8 @@ export default function NewItemListing() {
         locationName: formData.locationName,
         ownerId: user.uid,
         status: 'available',
-        imageUrls: [`https://picsum.photos/seed/${Math.random()}/600/800`], // Заглушка для фото (для MVP)
+        // Используем загруженное фото или заглушку
+        imageUrls: [previewImage || `https://picsum.photos/seed/${Math.random()}/600/800`],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         latitude: 0,
@@ -103,11 +122,39 @@ export default function NewItemListing() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label>Фотографии</Label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleFileChange}
+            />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <div className="aspect-square border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-all cursor-pointer bg-muted/20">
-                <UploadCloud className="w-8 h-8" />
-                <span className="text-xs font-medium">Загрузить</span>
-              </div>
+              {previewImage ? (
+                <div className="relative aspect-square rounded-2xl overflow-hidden group">
+                  <Image 
+                    src={previewImage} 
+                    alt="Preview" 
+                    fill 
+                    className="object-cover"
+                  />
+                  <button 
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-square border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-all cursor-pointer bg-muted/20"
+                >
+                  <UploadCloud className="w-8 h-8" />
+                  <span className="text-xs font-medium">Загрузить</span>
+                </div>
+              )}
             </div>
           </div>
 
