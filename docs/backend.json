@@ -4,33 +4,41 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user's profile information within the Polochka Exchange application, excluding sensitive authentication credentials.",
+      "description": "Represents a user's profile information within the Polochka Exchange application.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the UserProfile entity."
         },
-        "displayName": {
+        "username": {
           "type": "string",
-          "description": "The public name chosen by the user."
+          "description": "A unique, user-chosen name for display purposes."
         },
         "email": {
           "type": "string",
           "description": "The user's email address, used for communication.",
           "format": "email"
         },
-        "profileImageUrl": {
+        "bio": {
           "type": "string",
-          "description": "URL to the user's profile picture, if available.",
+          "description": "An optional short description or biography provided by the user."
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "An optional URL pointing to the user's profile picture.",
           "format": "uri"
+        },
+        "locationName": {
+          "type": "string",
+          "description": "A human-readable name for the user's primary location (e.g., city, neighborhood)."
         },
         "latitude": {
           "type": "number",
-          "description": "The latitude coordinate of the user's general location, for location-aware features."
+          "description": "The geographic latitude of the user's primary location for proximity searches."
         },
         "longitude": {
           "type": "number",
-          "description": "The longitude coordinate of the user's general location, for location-aware features."
+          "description": "The geographic longitude of the user's primary location for proximity searches."
         },
         "createdAt": {
           "type": "string",
@@ -39,22 +47,23 @@
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp indicating when the user profile was last updated.",
+          "description": "Timestamp indicating the last time the user profile was updated.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "displayName",
+        "username",
         "email",
-        "createdAt"
+        "createdAt",
+        "updatedAt"
       ]
     },
     "Category": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Category",
       "type": "object",
-      "description": "Defines a classification category for item listings, enabling organization and filtering.",
+      "description": "Defines a classification for item listings, enabling organization and filtering.",
       "properties": {
         "id": {
           "type": "string",
@@ -66,11 +75,11 @@
         },
         "description": {
           "type": "string",
-          "description": "A brief description of the category's scope."
+          "description": "An optional detailed description of the category."
         },
         "imageUrl": {
           "type": "string",
-          "description": "Optional URL to an icon or image representing the category.",
+          "description": "An optional URL to an image or icon representing the category.",
           "format": "uri"
         }
       },
@@ -83,7 +92,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ItemListing",
       "type": "object",
-      "description": "Represents an item posted by a user for exchange on the Polochka Exchange platform.",
+      "description": "Represents an item that a user has listed for exchange on the Polochka Exchange platform.",
       "properties": {
         "id": {
           "type": "string",
@@ -91,42 +100,50 @@
         },
         "title": {
           "type": "string",
-          "description": "The title of the item listing."
+          "description": "The main title or name of the item being listed."
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the item and what is sought in exchange."
+          "description": "A detailed description of the item, including its features and any notable conditions."
         },
-        "itemCondition": {
+        "ownerId": {
           "type": "string",
-          "description": "The physical condition of the item (e.g., 'New', 'Used - Good', 'Used - Fair')."
+          "description": "Reference to UserProfile, indicating the user who listed this item. (Relationship: UserProfile 1:N ItemListing)"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to Category, classifying the item. (Relationship: Category 1:N ItemListing)"
+        },
+        "condition": {
+          "type": "string",
+          "description": "The physical condition of the item (e.g., 'New', 'Used - Like New', 'Used - Good')."
+        },
+        "price": {
+          "type": "number",
+          "description": "An optional suggested monetary value for the item, primarily for exchange context."
         },
         "imageUrls": {
           "type": "array",
-          "description": "An array of URLs to images showcasing the item.",
+          "description": "An array of URLs to images of the item, showcasing its appearance.",
           "items": {
             "type": "string"
           }
         },
-        "userId": {
+        "locationName": {
           "type": "string",
-          "description": "Reference to the UserProfile who created this listing. (Relationship: UserProfile 1:N ItemListing)"
-        },
-        "categoryId": {
-          "type": "string",
-          "description": "Reference to the primary Category this item belongs to. (Relationship: Category 1:N ItemListing)"
+          "description": "A human-readable name for the item's specific pickup or exchange location."
         },
         "latitude": {
           "type": "number",
-          "description": "The latitude coordinate of the item's physical location for proximity search."
+          "description": "The geographic latitude of the item's location for proximity searches."
         },
         "longitude": {
           "type": "number",
-          "description": "The longitude coordinate of the item's physical location for proximity search."
+          "description": "The geographic longitude of the item's location for proximity searches."
         },
-        "address": {
+        "status": {
           "type": "string",
-          "description": "A human-readable address or general area name for the item's location."
+          "description": "The current status of the item listing (e.g., 'available', 'pending exchange', 'exchanged', 'archived')."
         },
         "createdAt": {
           "type": "string",
@@ -135,26 +152,23 @@
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp indicating when the item listing was last updated.",
+          "description": "Timestamp indicating the last time the item listing was updated.",
           "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the item listing (e.g., 'active', 'pending_exchange', 'closed')."
         }
       },
       "required": [
         "id",
         "title",
         "description",
-        "itemCondition",
-        "imageUrls",
-        "userId",
+        "ownerId",
         "categoryId",
+        "imageUrls",
+        "locationName",
         "latitude",
         "longitude",
+        "status",
         "createdAt",
-        "status"
+        "updatedAt"
       ]
     }
   },
@@ -169,15 +183,15 @@
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "userprofile",
+          "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores individual user profile data. The `userId` path parameter must match `request.auth.uid` for write access. Includes public-facing user details, supporting public display when viewing item listings.",
+          "description": "Stores individual user profiles. The `userId` matches `request.auth.uid`. Some fields (`username`, `profilePictureUrl`, `locationName`, `latitude`, `longitude`) are publicly readable for item browsing and proximity searches, while others (`email`) are private to the owner.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user, matching `request.auth.uid`."
+              "description": "The unique identifier for the user profile, corresponding to Firebase Authentication's UID."
             }
           ]
         }
@@ -185,36 +199,52 @@
       {
         "path": "/categories/{categoryId}",
         "definition": {
-          "entityName": "category",
+          "entityName": "Category",
           "schema": {
             "$ref": "#/backend/entities/Category"
           },
-          "description": "Stores predefined categories for item listings. This data is static and publicly readable by all users, allowing for efficient browsing and filtering of items.",
+          "description": "Stores global, static categories for item classification. Read-only for all authenticated users; write access is restricted to administrators defined in `/roles_admin`.",
           "params": [
             {
               "name": "categoryId",
-              "description": "The unique identifier of the category."
+              "description": "The unique identifier for the category."
             }
           ]
         }
       },
       {
-        "path": "/listings/{listingId}",
+        "path": "/item_listings/{itemListingId}",
         "definition": {
-          "entityName": "itemlisting",
+          "entityName": "ItemListing",
           "schema": {
             "$ref": "#/backend/entities/ItemListing"
           },
-          "description": "Stores details of items available for exchange. Includes denormalized `userId` for authorization independence, enabling owner-based write access without `get()` calls. Documents are publicly readable if their `status` field is 'active', and writeable only by their `userId` owner.",
+          "description": "Stores all item listings. This collection leverages the `status` field for structural segregation of authorization; only items with `status: 'available'` are publicly browsable. Write/update access is strictly limited to the `ownerId` of the document, which must match `request.auth.uid`. Includes denormalized `ownerId` for authorization independence and simplified security rules.",
           "params": [
             {
-              "name": "listingId",
-              "description": "The unique identifier of the item listing."
+              "name": "itemListingId",
+              "description": "The unique identifier for the item listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "A sentinel collection to store administrator UIDs. The mere existence of a document at `/roles_admin/{userId}` grants administrative privileges (e.g., to create/update categories) to the corresponding `userId`. This implements a Database Access Control (DBAC) model using 'Existence over Content'.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who has administrative privileges."
             }
           ]
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure for Polochka Exchange prioritizes Authorization Independence and Query-able Access Patterns (QAPs) to ensure a secure, scalable, and debuggable system. \n\n**Authorization Independence via Denormalization:**\n*   **User Profiles (`/users/{userId}`):** User profiles are stored in a top-level collection where the document ID (`{userId}`) directly corresponds to `request.auth.uid`. This allows for direct ownership checks (`request.auth.uid == userId`) without requiring any `get()` operations, making rules atomic and easy to debug. This structure also supports atomic creation of a user profile upon registration.\n*   **Item Listings (`/listings/{listingId}`):** Item listings are stored in a single top-level collection. Each `ItemListing` document explicitly includes the `userId` of its owner. This critical denormalization ensures that authorization checks for ownership (`request.auth.uid == resource.data.userId`) are self-contained within the `ItemListing` document itself. This eliminates the need for `get()` calls to a parent `UserProfile` document when determining write permissions for a listing, greatly enhancing the atomicity of operations (e.g., creating a listing and updating a user's profile can be done in a transaction without rule conflicts).\n*   **Categories (`/categories/{categoryId}`):** Categories are global and static data, not user-owned. No denormalization for authorization is required here as their access is generally public read and implicitly admin-write.\n\n**Query-able Access Patterns (QAPs):**\n*   **Item Listings (`/listings/{listingId}`):** By placing `ItemListing` documents in a top-level collection (`/listings`), the system inherently supports efficient `list` queries for browsing and the 'swipe' mode UI. Security rules can permit `list` operations on `/listings` while ensuring that individual `get` requests (or implicit reads within a list operation) only return documents where `resource.data.status == 'active'` (for public browsing) or `request.auth.uid == resource.data.userId` (for owner access to their own listings regardless of status). This structure makes it trivial to query all active listings across all users without complex collection group queries or security rule filtering limitations, directly supporting the core browsing and discovery features.\n*   **Categories (`/categories/{categoryId}`):** Similarly, placing categories in a top-level `/categories` collection allows for a simple `list` operation to retrieve all available categories for filtering items, fulfilling the 'Category Management' feature requirement with ease.\n\n**Structural Segregation:**\n*   Each collection (`/users`, `/categories`, `/listings`) holds documents with a homogeneous security posture. `UserProfile` documents are primarily user-owned (write) and publicly readable (read). `Category` documents are globally readable. `ItemListing` documents are publicly readable (if active) and owner-writeable. This segregation simplifies security rules by avoiding mixed access requirements within a single collection."
+    "reasoning": "The Firestore structure for Polochka Exchange prioritizes secure, scalable, and debuggable authorization by strictly adhering to the core design principles. \n\n**Authorization Independence (CRITICAL):** This structure achieves authorization independence primarily through denormalization. Each `ItemListing` document explicitly contains an `ownerId` field, which directly corresponds to the `UserProfile` `id` of the listing creator. This allows Firestore security rules to verify ownership directly using `request.auth.uid == resource.data.ownerId` for read/write operations on listings, completely eliminating the need for expensive and complex `get()` calls to parent or related collections. Similarly, `UserProfile` documents are path-based (`/users/{userId}`), making `request.auth.uid == userId` the direct authorization check. For administrative roles, a dedicated `/roles_admin/{userId}` collection uses 'existence over content' for authorization, which is atomic and avoids `get()` calls for role checking.\n\n**QAPs (Rules are not Filters):** The structure facilitates Query Access Patterns (QAPs) by using structural segregation and explicit state modeling. \n*   **Global Item Browsing:** All item listings are stored in a single top-level collection `/item_listings/{itemListingId}`. The crucial `status` field (e.g., 'available', 'draft', 'archived') in the `ItemListing` entity is used to manage security posture. When users browse public listings, they will issue queries explicitly filtering by status, e.g., `db.collection('item_listings').where('status', '==', 'available')`. Security rules then enforce that only documents matching `status == 'available'` are readable by non-owners, ensuring that rules do not implicitly filter query results, but rather validate explicit client requests. This makes the authorization intent clear and simplifies rule logic.\n*   **User-Specific Item Management:** A user can retrieve all their own listings (regardless of status) by querying `db.collection('item_listings').where('ownerId', '==', request.auth.uid)`. Rules grant full read/write access to the owner based on the `ownerId` field.\n*   **Category Listing:** Categories are stored in `/categories/{categoryId}`. As these are global and mostly static, rules allow read access to all authenticated users for browsing, and write access only to administrators.\n\n**Structural Segregation and Access Modeling:**\n*   **User Profiles (`/users/{userId}`):** Follows the 'Private Data' and 'Hierarchical Paths for User-Owned Data' principles. Each user's profile is directly accessible via their UID, making ownership explicit. Public fields (e.g., username, profile picture, location for proximity searches) can be read by others, while sensitive data (e.g., email) is restricted to the owner.\n*   **Categories (`/categories/{categoryId}`):** Adheres to 'Structural Segregation' as a top-level collection for global, administrative data. Its uniform read-only security posture for most users simplifies rules.\n*   **Item Listings (`/item_listings/{itemListingId}`):** While not a subcollection of `/users/{userId}`, it maintains strong ownership through `ownerId`. This top-level approach facilitates global browsing queries (e.g., location-aware search) without requiring complex fan-out queries across user subcollections. The `status` field provides internal 'Structural Segregation' by differentiating public from private/draft items.\n*   **Admin Roles (`/roles_admin/{userId}`):** Implements 'Global Roles (DBAC)' via 'Existence over Content', providing a clear and efficient way to assign administrative privileges for tasks like category management without custom claims or complex data structures."
   }
 }

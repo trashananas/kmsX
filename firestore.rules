@@ -1,114 +1,138 @@
-rules_version = '2';
-
 /**
- * FIRESTORE SECURITY RULES: POLOCHKA EXCHANGE (PROTOTYPING MODE)
- * 
- * Core Philosophy:
- * This ruleset implements a strict ownership-based authorization model while maintaining 
- * flexibility for data shapes during the prototyping phase. It prioritizes "Authorization 
- * Independence" by relying on denormalized fields (like userId) to avoid expensive cross-document 
- * lookups (get() calls).
- * 
- * Data Structure:
- * - /users/{userId}: Private user profiles, owned by the authenticated user.
- * - /categories/{categoryId}: Publicly readable, static system data.
- * - /listings/{listingId}: Publicly discoverable items for exchange, owned by creators.
- * 
- * Key Security Decisions:
- * 1. Ownership via Denormalization: Item listings contain a 'userId' field. This allows 
- *    rules to verify the owner of a listing immediately without fetching the user's profile.
- * 2. Path-to-Data Consistency: For user profiles, we enforce that the 'id' field inside 
- *    the document matches the document's ID in the path to ensure relational integrity.
- * 3. Public Discovery vs. Private Control: Listings are publicly readable if 'active', 
- *    but write operations are strictly limited to the creator identified by 'userId'.
- * 4. Structural Segregation: Each collection has a homogeneous security posture, 
- *    simplifying the logic and preventing accidental data exposure.
+ * POLOCHKA EXCHANGE - FIRESTORE SECURITY RULES
+ *
+ * CORE PHILOSOPHY:
+ * This ruleset implements a robust ownership-based security model combined with role-based 
+ * access control for administrative functions. The primary goal is to ensure that users 
+ * have full control over their own profiles and item listings while maintaining a public 
+ * marketplace for "available" goods. 
+ *
+ * DATA STRUCTURE:
+ * - /users/{userId}: Private and public user profile data, keyed by the Firebase Auth UID.
+ * - /categories/{categoryId}: Global classification data for items.
+ * - /item_listings/{itemListingId}: A flat, top-level collection of all exchange items.
+ * - /roles_admin/{userId}: A sentinel collection where the existence of a document grants admin rights.
+ *
+ * KEY SECURITY DECISIONS:
+ * - Ownership Independence: Authorization logic for item listings is self-contained via a 
+ *   denormalized 'ownerId' field, eliminating the need for cross-document lookups.
+ * - Existence-Based Roles: Admin privileges are verified using an efficient 'exists' check 
+ *   on the /roles_admin path.
+ * - Structural Segregation: Items are filtered by 'status' to distinguish between public 
+ *   offerings and private/draft listings.
+ * - Prototyping Flexibility: Rules enforce "who" can write but are permissive regarding "what" 
+ *   is written (schema-agnostic) to support rapid development cycles.
+ *
+ * DENORMALIZATION FOR AUTHORIZATION:
+ * - 'ItemListing' documents include an 'ownerId' field. This allows the rules to verify 
+ *   ownership (request.auth.uid == resource.data.ownerId) without performing additional 
+ *   document reads, reducing latency and cost.
  */
 
+/*
+ * STEP 1: ANALYSIS & SYNTHESIS
+ * 
+ * 1. Adopt the Intent:
+ *    The primary intent is to secure the 'Polochka Exchange' by ensuring users can only 
+ *    manage their own content, while allowing a public browsing experience for active 
+ *    listings. Administrative tasks (Category management) are restricted to a subset of users.
+ * 
+ * 2. Access Control Patterns:
+ *    - /users/{userId}: Pattern 1 (Ownership) & Pattern 4 (Self-Creation).
+ *    - /categories/{categoryId}: Pattern 2 (Roles - Admin) & Pattern 3 (Public Read).
+ *    - /item_listings/{itemListingId}: Pattern 5 (Public Read with Owner-Only Writes).
+ *    - /roles_admin/{userId}: Pattern 2 (Global Roles - Existence check).
+ * 
+ * 3. Ambiguity Resolution:
+ *    The IR mentions some fields in 'UserProfile' are public and some are private. In this 
+ *    prototyping phase, we will allow 'get' and 'list' for all authenticated users to 
+ *    facilitate browsing, but restrict 'update' and 'delete' strictly to the owner.
+ */
+
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- HELPER FUNCTIONS ---
+    // --- GLOBAL HELPER FUNCTIONS ---
 
-    /** @description Checks if the user is authenticated with Firebase Auth. */
+    /** Checks if the request is from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    /** Checks if the provided UID matches the authenticated user's UID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Verifies ownership of an existing document before update or delete. */
+    /** Checks if the document belongs to the user and exists. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
 
-    /** @description Shorthand for the incoming data in the request. */
-    function incomingData() {
-      return request.resource.data;
-    }
-
-    /** @description Shorthand for the existing data in the document. */
-    function existingData() {
-      return resource.data;
+    /** Checks for administrative privileges via the roles_admin collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     // --- COLLECTION RULES ---
 
     /**
-     * @description Rules for UserProfile entities. Users can create and manage their own profiles.
+     * @description Rules for user profiles. Users can manage their own profile; others can read profiles for browsing.
      * @path /users/{userId}
-     * @allow (create) if auth.uid == userId and data.id == userId.
-     * @deny (update) if auth.uid != userId or trying to change the document 'id'.
-     * @principle Ownership and Relational Integrity.
+     * @allow (create) request.auth.uid == userId
+     * @deny (update) request.auth.uid != userId
+     * @principle Ownership-based writes and self-creation validation.
      */
     match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if false; // Prevent bulk scraping of user data; profiles should be fetched by ID.
-      
-      allow create: if isOwner(userId) && incomingData().id == userId;
-      allow update: if isExistingOwner(userId) && incomingData().id == existingData().id;
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for Category entities. Read-only for all users; no public writes.
+     * @description Rules for item categories. Categories are managed by admins but readable by all users.
      * @path /categories/{categoryId}
-     * @allow (get, list) if true.
-     * @deny (create, update, delete) for all public users.
-     * @principle Public Read with Restricted Writes (System Static Data).
+     * @allow (get) isSignedIn()
+     * @deny (create) !isAdmin()
+     * @principle Role-based access control (RBAC) for administrative data.
      */
     match /categories/{categoryId} {
-      allow get, list: if true;
-      
-      // Categories are managed by administrators via the Firebase Console or Admin SDK.
-      allow create, update, delete: if false; 
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Rules for ItemListing entities. Publicly readable for browsing; owner-only writes.
-     * @path /listings/{listingId}
-     * @allow (create) if incoming userId matches auth.uid.
-     * @allow (list) for anyone to browse active listings.
-     * @deny (update) if the 'userId' ownership field is being modified.
-     * @principle Ownership via Denormalization and Public Browsing.
+     * @description Rules for item listings. Owners have full control. Others can read if the item is 'available'.
+     * @path /item_listings/{itemListingId}
+     * @allow (update) resource.data.ownerId == request.auth.uid
+     * @deny (delete) resource.data.ownerId != request.auth.uid
+     * @principle Pattern 5: Owner-only writes with status-dependent public reads.
      */
-    match /listings/{listingId} {
-      // Allow individual gets and lists. 
-      // Query security: client queries should filter for status == 'active' or their own userId.
-      allow get: if true;
-      allow list: if true;
+    match /item_listings/{itemListingId} {
+      // Note: resource.data is used here for 'get' only. 'list' rules in P6 are path or state based.
+      // For top-level listings, we allow listing for all signed-in users, assuming the query filters for 'available' or 'ownerId'.
+      allow get: if isSignedIn() && (resource.data.status == 'available' || isOwner(resource.data.ownerId));
+      allow list: if isSignedIn();
+      
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.ownerId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(resource.data.ownerId);
+    }
 
-      // Note: Prototyping Mode does not validate the full 'ItemListing' schema, 
-      // but strictly enforces that the creator field matches the authenticated user.
-      allow create: if isSignedIn() && incomingData().userId == request.auth.uid;
-      
-      allow update: if isExistingOwner(existingData().userId) 
-                    && incomingData().userId == existingData().userId; // Enforce immutable ownership.
-      
-      allow delete: if isExistingOwner(existingData().userId);
+    /**
+     * @description Rules for admin role indicators. Existence of a doc grants admin status.
+     * @path /roles_admin/{userId}
+     * @allow (get) isSignedIn()
+     * @deny (write) true
+     * @principle Global role assignment using existence-over-content pattern.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      // Role management is typically handled via a secure admin environment or Firebase Console.
+      allow create, update, delete: if false;
     }
   }
 }
