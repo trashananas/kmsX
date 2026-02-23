@@ -79,6 +79,8 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   , [firestore, item?.categoryId]);
   const { data: category } = useDoc(categoryRef);
 
+  const availableQuantity = item ? (item.quantity !== undefined && item.quantity !== null ? item.quantity : 1) : 0;
+
   const handleDelete = () => {
     if (!item || !user || item.ownerId !== user.uid) return;
     
@@ -91,17 +93,22 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   };
 
   const handleReserve = () => {
-    if (!item || !user || reserveCount <= 0 || reserveCount > item.quantity) return;
+    if (!item || !user || reserveCount <= 0 || reserveCount > availableQuantity) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка бронирования",
+        description: `Вы не можете забронировать более ${availableQuantity} шт.`,
+      });
+      return;
+    }
 
-    const newQuantity = item.quantity - reserveCount;
+    const newQuantity = availableQuantity - reserveCount;
     
-    // Update global item quantity
     updateDocumentNonBlocking(itemRef as any, {
       quantity: newQuantity,
       updatedAt: new Date().toISOString()
     });
 
-    // Save reservation to user's favorites/reservations
     const favRef = doc(firestore, 'users', user.uid, 'favorites', item.id);
     setDocumentNonBlocking(favRef, {
       itemId: item.id,
@@ -109,7 +116,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       imageUrl: item.imageUrls?.[0] || '',
       condition: item.condition || '',
       locationName: item.locationName || '',
-      reservedCount: reserveCount,
+      reservedCount: (item.reservedCount || 0) + reserveCount,
       createdAt: new Date().toISOString()
     }, { merge: true });
 
@@ -118,6 +125,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       description: `Вы забронировали ${reserveCount} шт. Вы можете найти их во вкладке «Лайки».`,
     });
     setIsReserveOpen(false);
+    setReserveCount(1);
   };
 
   if (isLoading) {
@@ -147,7 +155,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   }
 
   const isOwner = user && item.ownerId === user.uid;
-  const isSoldOut = item.quantity <= 0;
+  const isSoldOut = availableQuantity <= 0;
   const formattedDate = item.createdAt 
     ? format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru }) 
     : 'Недавно';
@@ -160,7 +168,6 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       </Link>
 
       <div className={`flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border ${isSoldOut ? 'border-destructive/50' : ''}`}>
-        {/* Image Section */}
         <div className="w-full md:w-1/2">
           <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
             <Image 
@@ -183,7 +190,6 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* Info Section */}
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -206,7 +212,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
               </span>
               <Badge variant="outline" className={`rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground ${isSoldOut ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}`}>
                 <Package className="w-3.5 h-3.5" />
-                {isSoldOut ? 'Нет в наличии' : `В наличии: ${item.quantity} шт.`}
+                {isSoldOut ? 'Нет в наличии' : `В наличии: ${availableQuantity} шт.`}
               </Badge>
             </div>
 
@@ -311,18 +317,21 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
                   <DialogHeader>
                     <DialogTitle className="text-2xl">Бронирование</DialogTitle>
                     <DialogDescription>
-                      Сколько единиц товара «{item.title}» вы хотите забронировать?
+                      Сколько единиц товара «{item.title}» вы хотите забронировать? (В наличии: {availableQuantity})
                     </DialogDescription>
                   </DialogHeader>
                   <div className="py-6">
-                    <Label htmlFor="reserve-count">Количество (макс. {item.quantity})</Label>
+                    <Label htmlFor="reserve-count">Количество (макс. {availableQuantity})</Label>
                     <Input 
                       id="reserve-count"
                       type="number"
                       min="1"
-                      max={item.quantity}
+                      max={availableQuantity}
                       value={reserveCount}
-                      onChange={(e) => setReserveCount(parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val)) setReserveCount(val);
+                      }}
                       className="h-12 rounded-xl mt-2"
                     />
                   </div>

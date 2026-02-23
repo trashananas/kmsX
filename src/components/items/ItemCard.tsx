@@ -29,7 +29,12 @@ export default function ItemCard({ item }: { item: Item }) {
 
   const itemListingRef = useMemoFirebase(() => doc(firestore, 'item_listings', item.id), [firestore, item.id]);
   const { data: fullItem } = useDoc(itemListingRef);
-  const currentQuantity = fullItem?.quantity ?? item.quantity ?? 1;
+  
+  // Use 1 as default if quantity is null/undefined
+  const currentQuantity = (fullItem?.quantity !== undefined && fullItem?.quantity !== null) 
+    ? fullItem.quantity 
+    : (item.quantity !== undefined && item.quantity !== null ? item.quantity : 1);
+    
   const isSoldOut = currentQuantity <= 0;
 
   const favRef = useMemoFirebase(() => {
