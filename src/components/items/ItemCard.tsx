@@ -19,7 +19,7 @@ interface Item {
 export default function ItemCard({ item }: { item: Item }) {
   return (
     <Card className="overflow-hidden group border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl bg-white">
-      <Link href={`/items/${item.id}`} className="block relative aspect-[4/5]">
+      <Link href={`/items/${item.id}`} className="block relative aspect-[4/5] overflow-hidden">
         <Image 
           src={item.image} 
           alt={item.title} 
