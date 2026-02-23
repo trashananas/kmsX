@@ -1,0 +1,41 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "clothes",
+      "description": "Stylish jacket",
+      "imageUrl": "https://picsum.photos/seed/clothes1/600/800",
+      "imageHint": "clothes jacket"
+    },
+    {
+      "id": "electronics",
+      "description": "Vintage camera",
+      "imageUrl": "https://picsum.photos/seed/elec1/600/800",
+      "imageHint": "camera electronics"
+    },
+    {
+      "id": "books",
+      "description": "Collection of classic books",
+      "imageUrl": "https://picsum.photos/seed/books1/600/800",
+      "imageHint": "books collection"
+    },
+    {
+      "id": "furniture",
+      "description": "Modern chair",
+      "imageUrl": "https://picsum.photos/seed/furn1/600/800",
+      "imageHint": "furniture chair"
+    },
+    {
+      "id": "toys",
+      "description": "Handmade wooden toy",
+      "imageUrl": "https://picsum.photos/seed/toys1/600/800",
+      "imageHint": "toys wooden"
+    },
+    {
+      "id": "bike",
+      "description": "Mountain bike",
+      "imageUrl": "https://picsum.photos/seed/bike1/600/800",
+      "imageHint": "bicycle mountain"
+    }
+  ]
+}
