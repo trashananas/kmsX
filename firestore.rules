@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Вспомогательные функции
+    // kmsX Security Rules
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,38 +12,38 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Role-based admin check
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    // Правила для профилей пользователей и их лайков
+    // User profiles and favorites
     match /users/{userId} {
-      allow read: if true; 
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      // Allow authenticated users to see profiles
+      allow read: if isSignedIn(); 
+      allow write: if isOwner(userId);
       
       match /favorites/{itemId} {
         allow read, write: if isOwner(userId);
       }
     }
 
-    // Правила для категорий (чтение всем, создание авторизованным)
+    // kmsX Categories - anyone logged in can read/create
     match /categories/{categoryId} {
-      allow read: if true; 
+      allow read: if isSignedIn(); 
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
-    // Правила для объявлений (чтение всем, управление владельцем)
-    // Добавлен комментарий для триггера деплоя: Fix permissions for list operation
+    // kmsX Item Listings
     match /item_listings/{itemListingId} {
-      allow read: if true; 
+      // Must be logged in to browse kmsX
+      allow read: if isSignedIn(); 
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
-    // Правила для админских ролей
+    // Admin roles management
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();

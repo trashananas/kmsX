@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user's profile information within the Polochka Exchange application.",
+      "description": "Represents a user's profile information within the kmsX application.",
       "properties": {
         "id": {
           "type": "string",
@@ -64,7 +64,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Category",
       "type": "object",
-      "description": "Defines a classification for item listings, enabling organization and filtering.",
+      "description": "Defines a classification for item listings in kmsX.",
       "properties": {
         "id": {
           "type": "string",
@@ -72,15 +72,15 @@
         },
         "name": {
           "type": "string",
-          "description": "The name of the category (e.g., 'Electronics', 'Books', 'Furniture')."
+          "description": "The name of the category."
         },
         "description": {
           "type": "string",
-          "description": "An optional detailed description of the category."
+          "description": "An optional detailed description."
         },
         "imageUrl": {
           "type": "string",
-          "description": "An optional URL to an image or icon representing the category.",
+          "description": "An optional URL to an image or icon.",
           "format": "uri"
         }
       },
@@ -93,7 +93,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ItemListing",
       "type": "object",
-      "description": "Represents an item that a user has listed for exchange on the Polochka Exchange platform.",
+      "description": "Represents an item that a user has listed for exchange on the kmsX platform.",
       "properties": {
         "id": {
           "type": "string",
@@ -101,59 +101,52 @@
         },
         "title": {
           "type": "string",
-          "description": "The main title or name of the item being listed."
+          "description": "The main title of the item."
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the item, including its features and any notable conditions."
+          "description": "Detailed description of the item."
         },
         "ownerId": {
           "type": "string",
-          "description": "Reference to UserProfile, indicating the user who listed this item. (Relationship: UserProfile 1:N ItemListing)"
+          "description": "Reference to UserProfile ID."
         },
         "categoryId": {
           "type": "string",
-          "description": "Reference to Category, classifying the item. (Relationship: Category 1:N ItemListing)"
+          "description": "Reference to Category ID."
         },
         "condition": {
           "type": "string",
-          "description": "The physical condition of the item (e.g., 'New', 'Used - Like New', 'Used - Good')."
+          "description": "Condition of the item."
         },
         "price": {
           "type": "number",
-          "description": "An optional suggested monetary value for the item, primarily for exchange context."
+          "description": "Optional monetary context."
         },
         "imageUrls": {
           "type": "array",
-          "description": "An array of URLs to images of the item, showcasing its appearance.",
           "items": {
             "type": "string"
           }
         },
         "locationName": {
-          "type": "string",
-          "description": "A human-readable name for the item's specific pickup or exchange location."
+          "type": "string"
         },
         "latitude": {
-          "type": "number",
-          "description": "The geographic latitude of the item's location for proximity searches."
+          "type": "number"
         },
         "longitude": {
-          "type": "number",
-          "description": "The geographic longitude of the item's location for proximity searches."
+          "type": "number"
         },
         "status": {
-          "type": "string",
-          "description": "The current status of the item listing (e.g., 'available', 'pending exchange', 'exchanged', 'archived')."
+          "type": "string"
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp indicating when the item listing was created.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp indicating the last time the item listing was updated.",
           "format": "date-time"
         }
       },
@@ -165,8 +158,6 @@
         "categoryId",
         "imageUrls",
         "locationName",
-        "latitude",
-        "longitude",
         "status",
         "createdAt",
         "updatedAt"
@@ -176,19 +167,16 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Favorite",
       "type": "object",
-      "description": "A record of an item that a user has 'liked' or favorited.",
+      "description": "A record of an item that a user has favorited in kmsX.",
       "properties": {
         "itemId": {
-          "type": "string",
-          "description": "Reference to the ItemListing ID."
+          "type": "string"
         },
         "title": {
-          "type": "string",
-          "description": "Denormalized item title for listing purposes."
+          "type": "string"
         },
         "imageUrl": {
-          "type": "string",
-          "description": "Denormalized item image URL for listing purposes."
+          "type": "string"
         },
         "condition": {
           "type": "string"
@@ -219,11 +207,11 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores individual user profiles.",
+          "description": "User profiles.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user profile."
+              "description": "User UID."
             }
           ]
         }
@@ -235,15 +223,15 @@
           "schema": {
             "$ref": "#/backend/entities/Favorite"
           },
-          "description": "Stores a user's favorited items.",
+          "description": "User favorites.",
           "params": [
             {
               "name": "userId",
-              "description": "The ID of the user who liked the item."
+              "description": "User UID."
             },
             {
               "name": "itemId",
-              "description": "The ID of the favorited item."
+              "description": "Item ID."
             }
           ]
         }
@@ -255,11 +243,11 @@
           "schema": {
             "$ref": "#/backend/entities/Category"
           },
-          "description": "Stores global item categories.",
+          "description": "Global categories.",
           "params": [
             {
               "name": "categoryId",
-              "description": "The unique identifier for the category."
+              "description": "Category ID."
             }
           ]
         }
@@ -271,32 +259,15 @@
           "schema": {
             "$ref": "#/backend/entities/ItemListing"
           },
-          "description": "Stores all item listings.",
+          "description": "Item listings.",
           "params": [
             {
               "name": "itemListingId",
-              "description": "The unique identifier for the item listing."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "AdminRole",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "A sentinel collection to store administrator UIDs.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who has administrative privileges."
+              "description": "Item ID."
             }
           ]
         }
       }
-    ],
-    "reasoning": "Standard structure for ownership and public visibility."
+    ]
   }
 }

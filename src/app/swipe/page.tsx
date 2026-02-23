@@ -7,6 +7,7 @@ import { X, Heart, MapPin, Info, ArrowLeft, RefreshCw, PackageOpen } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, limit, doc } from 'firebase/firestore';
 
@@ -15,24 +16,25 @@ export default function SwipeMode() {
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth');
+    }
+  }, [user, isUserLoading, router]);
 
   const swipeQuery = useMemoFirebase(() => {
     const baseRef = collection(firestore, 'item_listings');
-    // Фильтруем только доступные вещи
-    // Если пользователь авторизован, мы могли бы использовать != для исключения своих вещей,
-    // но для стабильности правил и индексов сначала убедимся в работе базового запроса.
-    const q = query(
+    return query(
       baseRef, 
       where('status', '==', 'available'),
       limit(50)
     );
-    return q;
   }, [firestore]);
 
   const { data: rawItems, isLoading } = useCollection(swipeQuery);
-
-  // Фильтруем свои вещи на стороне клиента, чтобы избежать сложностей с индексами и правилами !=
   const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
 
   const handleLike = useCallback((item: any) => {
@@ -89,71 +91,73 @@ export default function SwipeMode() {
     setTouchStart(null);
   };
 
-  if (isLoading) {
+  if (isUserLoading || isLoading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+      <div className="flex-1 flex items-center justify-center">
+        <RefreshCw className="w-10 h-10 text-primary animate-spin" />
       </div>
     );
   }
 
-  const currentItem = items[currentIndex];
+  if (!user) return null;
 
   if (!items.length || currentIndex >= items.length) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-          <PackageOpen className="w-10 h-10 text-primary" />
+      <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-28 h-28 bg-primary/10 rounded-full flex items-center justify-center mb-8">
+          <PackageOpen className="w-12 h-12 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Вещи закончились!</h2>
-        <p className="text-muted-foreground mb-8">Вы просмотрели все доступные варианты от других пользователей.</p>
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => setCurrentIndex(0)}>
-            Начать сначала
+        <h2 className="text-3xl font-bold mb-4 tracking-tight">Лента kmsX пуста!</h2>
+        <p className="text-muted-foreground text-lg mb-10 max-w-sm">Вы просмотрели все доступные вещи от других участников.</p>
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+          <Button variant="outline" className="h-14 rounded-2xl flex-1 text-lg" onClick={() => setCurrentIndex(0)}>
+            Сначала
           </Button>
-          <Link href="/items">
-            <Button>Вернуться к списку</Button>
+          <Link href="/items" className="flex-1">
+            <Button className="h-14 rounded-2xl w-full text-lg font-bold">К списку</Button>
           </Link>
         </div>
       </div>
     );
   }
 
+  const currentItem = items[currentIndex];
+
   return (
     <div className="fixed inset-0 top-16 bg-background flex flex-col z-40 select-none">
-      <div className="p-4 flex items-center justify-between border-b bg-white">
+      <div className="p-4 flex items-center justify-between border-b bg-white shadow-sm">
         <Link href="/items">
-          <Button variant="ghost" size="sm" className="gap-2">
+          <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
             <ArrowLeft className="w-4 h-4" />
-            Список
+            <span className="hidden sm:inline">Каталог</span>
           </Button>
         </Link>
         <div className="text-center">
-          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Лента открытий</p>
-          <h1 className="text-sm font-medium text-muted-foreground">Свайпайте или используйте стрелки</h1>
+          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">kmsX DISCOVER</p>
+          <h1 className="text-xs font-medium text-muted-foreground">Листайте или используйте стрелки</h1>
         </div>
         <Link href="/favorites">
-          <Button variant="ghost" size="sm" className="gap-2 text-primary">
-            Лайки
+          <Button variant="ghost" size="sm" className="gap-2 text-primary rounded-xl">
+            <span className="hidden sm:inline">Лайки</span>
             <Heart className="w-4 h-4 fill-primary" />
           </Button>
         </Link>
       </div>
 
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
-        <div className="flex items-center gap-4 md:gap-8 w-full max-w-4xl justify-center">
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4 md:p-8">
+        <div className="flex items-center gap-6 md:gap-12 w-full max-w-5xl justify-center">
           <Button 
             onClick={() => handleSwipe('left')}
             variant="outline" 
-            className="hidden md:flex w-16 h-16 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md p-0 shrink-0"
+            className="hidden md:flex w-20 h-20 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl p-0 shrink-0"
           >
-            <X className="w-8 h-8" />
+            <X className="w-10 h-10" />
           </Button>
 
           <div 
-            className={`relative w-full max-w-[360px] aspect-[3/4.5] rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-white transition-all duration-400 ease-out cursor-grab active:cursor-grabbing
-              ${direction === 'left' ? '-translate-x-[150%] rotate-[-20deg] opacity-0' : ''}
-              ${direction === 'right' ? 'translate-x-[150%] rotate-[20deg] opacity-0' : ''}
+            className={`relative w-full max-w-[380px] aspect-[3/4.5] rounded-[3.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.2)] bg-white transition-all duration-500 ease-out cursor-grab active:cursor-grabbing
+              ${direction === 'left' ? '-translate-x-[150%] rotate-[-30deg] opacity-0' : ''}
+              ${direction === 'right' ? 'translate-x-[150%] rotate-[30deg] opacity-0' : ''}
             `}
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
@@ -168,35 +172,35 @@ export default function SwipeMode() {
             />
             
             {direction === 'right' && (
-              <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center z-50">
-                <div className="border-8 border-emerald-500 text-emerald-500 font-black text-6xl px-8 py-4 rounded-3xl rotate-[-15deg] uppercase">
+              <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center z-50 backdrop-blur-sm">
+                <div className="border-[12px] border-emerald-500 text-emerald-500 font-black text-7xl px-12 py-6 rounded-3xl rotate-[-15deg] uppercase tracking-tighter shadow-2xl">
                   ЛАЙК
                 </div>
               </div>
             )}
             {direction === 'left' && (
-              <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center z-50">
-                <div className="border-8 border-rose-500 text-rose-500 font-black text-6xl px-8 py-4 rounded-3xl rotate-[15deg] uppercase">
+              <div className="absolute inset-0 bg-rose-500/30 flex items-center justify-center z-50 backdrop-blur-sm">
+                <div className="border-[12px] border-rose-500 text-rose-500 font-black text-7xl px-12 py-6 rounded-3xl rotate-[15deg] uppercase tracking-tighter shadow-2xl">
                   НЕТ
                 </div>
               </div>
             )}
 
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent text-white">
-              <div className="flex items-end justify-between mb-2">
-                <div className="flex-1 pr-4">
-                  <Badge className="bg-white/20 text-white border-none mb-3 backdrop-blur-md px-3">
-                    {currentItem.condition || 'Состояние'}
+            <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/95 via-black/40 to-transparent text-white">
+              <div className="flex items-end justify-between gap-4">
+                <div className="flex-1">
+                  <Badge className="bg-primary text-white border-none mb-4 backdrop-blur-xl px-4 py-1.5 text-xs font-bold uppercase tracking-widest">
+                    {currentItem.condition || 'Любое состояние'}
                   </Badge>
-                  <h2 className="text-2xl md:text-3xl font-bold mb-1 leading-tight">{currentItem.title}</h2>
-                  <div className="flex items-center gap-2 text-white/80 text-sm">
-                    <MapPin className="w-4 h-4" />
-                    <span>{currentItem.locationName || 'Мир'}</span>
+                  <h2 className="text-3xl font-bold mb-2 leading-[1.1] tracking-tight">{currentItem.title}</h2>
+                  <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <span>{currentItem.locationName || 'Любое место'}</span>
                   </div>
                 </div>
-                <Link href={`/items/${currentItem.id}?from=swipe`}>
-                  <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white/10 border-white/20 text-white hover:bg-white/20 shrink-0">
-                    <Info className="w-6 h-6" />
+                <Link href={`/items/${currentItem.id}?from=swipe`} className="shrink-0">
+                  <Button variant="outline" size="icon" className="rounded-full h-14 w-14 bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary hover:border-white shadow-lg backdrop-blur-md">
+                    <Info className="w-7 h-7" />
                   </Button>
                 </Link>
               </div>
@@ -205,26 +209,26 @@ export default function SwipeMode() {
 
           <Button 
             onClick={() => handleSwipe('right')}
-            className="hidden md:flex w-16 h-16 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-lg p-0 shrink-0"
+            className="hidden md:flex w-20 h-20 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40 p-0 shrink-0 border-none"
           >
-            <Heart className="w-8 h-8 fill-current" />
+            <Heart className="w-10 h-10 fill-current" />
           </Button>
         </div>
       </div>
 
-      <div className="md:hidden p-8 flex items-center justify-center gap-6 bg-background">
+      <div className="md:hidden p-10 flex items-center justify-center gap-8 bg-background border-t">
         <Button 
           onClick={() => handleSwipe('left')}
           variant="outline" 
-          className="w-14 h-14 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-md p-0"
+          className="w-16 h-16 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl p-0"
         >
-          <X className="w-6 h-6" />
+          <X className="w-8 h-8" />
         </Button>
         <Button 
           onClick={() => handleSwipe('right')}
-          className="w-14 h-14 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-lg p-0"
+          className="w-16 h-16 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40 p-0"
         >
-          <Heart className="w-6 h-6 fill-current" />
+          <Heart className="w-8 h-8 fill-current" />
         </Button>
       </div>
     </div>

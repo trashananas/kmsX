@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Filter, MapPin, PackageOpen, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +11,6 @@ import CategoryFilter from '@/components/items/CategoryFilter';
 import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSearchParams } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
 const MOCK_ITEMS_DATA = [
@@ -29,10 +30,17 @@ export default function BrowseItems() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const [isSeeding, setIsSeeding] = useState(false);
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const firestore = useFirestore();
-  const { user } = useUser();
   const searchParams = useSearchParams();
   const showOnlyMine = searchParams.get('owner') === 'me';
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth');
+    }
+  }, [user, isUserLoading, router]);
 
   const itemsQuery = useMemoFirebase(() => {
     const baseRef = collection(firestore, 'item_listings');
@@ -64,7 +72,7 @@ export default function BrowseItems() {
       toast({
         variant: "destructive",
         title: "Сначала создайте категории",
-        description: "Для добавления тестовых данных нужны категории в базе.",
+        description: "Перейдите в раздел категорий и нажмите «Восстановить стандартные».",
       });
       return;
     }
@@ -74,7 +82,6 @@ export default function BrowseItems() {
       const listingsRef = collection(firestore, 'item_listings');
       
       for (const mock of MOCK_ITEMS_DATA) {
-        // Пытаемся найти категорию по имени или берем первую попавшуюся
         const category = categories.find(c => c.name === mock.categoryName) || categories[0];
         
         addDocumentNonBlocking(listingsRef, {
@@ -94,13 +101,13 @@ export default function BrowseItems() {
       }
 
       toast({
-        title: "Тестовые данные добавлены",
-        description: "10 объявлений успешно созданы.",
+        title: "kmsX: Данные добавлены",
+        description: "10 объявлений успешно созданы для теста.",
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка при сидировании",
+        title: "Ошибка",
         description: "Не удалось добавить тестовые данные.",
       });
     } finally {
@@ -108,25 +115,33 @@ export default function BrowseItems() {
     }
   };
 
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="container px-4 py-8 max-w-7xl mx-auto">
+    <div className="container px-4 py-8 max-w-7xl mx-auto flex-1">
       <div className="flex flex-col gap-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-2xl shadow-sm border">
+        <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-[2rem] shadow-sm border">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
-              placeholder="Поиск вещей..." 
-              className="pl-10 h-12 bg-muted/30 border-none rounded-xl"
+              placeholder="Что ищем в kmsX?" 
+              className="pl-11 h-12 bg-muted/30 border-none rounded-2xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-2 w-full md:w-auto">
-            <div className="flex items-center gap-2 px-4 h-12 bg-muted/30 rounded-xl text-sm font-medium border border-transparent hover:border-primary/20 transition-all cursor-pointer">
+            <div className="flex items-center gap-2 px-5 h-12 bg-muted/30 rounded-2xl text-sm font-medium border border-transparent hover:border-primary/20 transition-all cursor-pointer">
               <MapPin className="w-4 h-4 text-primary" />
-              <span>Весь мир</span>
+              <span>По всей стране</span>
             </div>
-            <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
+            <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl">
               <Filter className="w-4 h-4" />
             </Button>
           </div>
@@ -135,7 +150,7 @@ export default function BrowseItems() {
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="w-full lg:w-64 shrink-0">
             <div className="sticky top-24">
-              <h2 className="text-lg font-bold mb-4 px-2">Категории</h2>
+              <h2 className="text-xl font-bold mb-6 px-2">Категории</h2>
               <CategoryFilter 
                 selectedId={selectedCategoryId} 
                 onSelect={setSelectedCategoryId} 
@@ -144,18 +159,18 @@ export default function BrowseItems() {
           </aside>
 
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold font-headline">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl font-bold font-headline tracking-tight">
                 {showOnlyMine ? 'Мои вещи' : (selectedCategoryId === 'all' ? 'Все вещи' : 'Результаты')}
-                {!isLoading && <span className="text-muted-foreground font-normal text-sm ml-2">({filteredItems.length})</span>}
+                {!isLoading && <span className="text-muted-foreground font-normal text-lg ml-3">({filteredItems.length})</span>}
               </h1>
-              {user && filteredItems.length === 0 && !isLoading && !showOnlyMine && (
+              {filteredItems.length === 0 && !isLoading && !showOnlyMine && (
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={seedMockItems} 
                   disabled={isSeeding}
-                  className="rounded-xl gap-2"
+                  className="rounded-xl gap-2 border-primary/20 text-primary"
                 >
                   <RefreshCw className={`w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
                   Тестовые данные
@@ -164,13 +179,13 @@ export default function BrowseItems() {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <Skeleton key={i} className="aspect-[4/5] rounded-2xl" />
+                  <Skeleton key={i} className="aspect-[4/5] rounded-[2.5rem]" />
                 ))}
               </div>
             ) : filteredItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filteredItems.map(item => (
                   <ItemCard key={item.id} item={{
                     id: item.id,
@@ -184,16 +199,16 @@ export default function BrowseItems() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-[2rem] border border-dashed">
-                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <PackageOpen className="w-10 h-10 text-muted-foreground/50" />
+              <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-[3rem] border border-dashed border-muted-foreground/20">
+                <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
+                  <PackageOpen className="w-12 h-12 text-muted-foreground/30" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Здесь пока пусто</h3>
-                <p className="text-muted-foreground mb-8">
-                  {showOnlyMine ? "У вас еще нет объявлений." : "Будьте первым, кто разместит объявление в этой категории!"}
+                <h3 className="text-2xl font-bold mb-3">Здесь пока тихо</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">
+                  {showOnlyMine ? "Вы еще ничего не выставили на kmsX." : "Будьте первым, кто предложит вещь в kmsX!"}
                 </p>
-                {user && !showOnlyMine && (
-                  <Button variant="outline" onClick={seedMockItems} disabled={isSeeding} className="rounded-xl">
+                {!showOnlyMine && (
+                  <Button variant="outline" onClick={seedMockItems} disabled={isSeeding} className="rounded-2xl h-12 px-8">
                     <RefreshCw className={`mr-2 w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
                     Добавить 10 тестовых объявлений
                   </Button>

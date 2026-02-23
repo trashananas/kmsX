@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
@@ -5,8 +6,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Полочка | Обмен вещами с соседями',
-  description: 'Современный способ обмениваться вещами с людьми в вашем районе. Просто, честно и экологично.',
+  title: 'kmsX | Современный обмен вещами',
+  description: 'Обменивайтесь вещами с соседями быстро и безопасно в kmsX. Лучший способ дать вещам вторую жизнь.',
 };
 
 export default function RootLayout({
@@ -24,9 +25,9 @@ export default function RootLayout({
       <body className="font-body antialiased min-h-screen bg-background">
         <FirebaseClientProvider>
           <Navbar />
-          <main className="pt-16">
+          <div className="pt-16 min-h-screen flex flex-col">
             {children}
-          </main>
+          </div>
           <Toaster />
         </FirebaseClientProvider>
       </body>

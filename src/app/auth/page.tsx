@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Layers, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth, initiateEmailSignIn, initiateEmailSignUp } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
 
 export default function AuthPage() {
@@ -17,7 +18,14 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const auth = useAuth();
+  const { user } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/items');
+    }
+  }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +34,7 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await initiateEmailSignIn(auth, email.trim(), password);
-      toast({ title: "Вход выполнен", description: "Добро пожаловать обратно!" });
-      router.push('/items');
+      toast({ title: "Вход выполнен", description: "Добро пожаловать в kmsX!" });
     } catch (err: any) {
       let message = "Не удалось войти. Проверьте данные.";
       if (err.code === 'auth/invalid-email') message = "Некорректный адрес почты.";
@@ -46,8 +53,7 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await initiateEmailSignUp(auth, email.trim(), password);
-      toast({ title: "Аккаунт создан", description: "Теперь вы можете размещать объявления." });
-      router.push('/items');
+      toast({ title: "Аккаунт создан", description: "Теперь вы — часть kmsX!" });
     } catch (err: any) {
       let message = "Ошибка при регистрации.";
       if (err.code === 'auth/invalid-email') message = "Некорректный адрес почты.";
@@ -61,30 +67,30 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-muted/30">
+    <div className="flex-1 flex items-center justify-center p-4 bg-muted/30">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30">
-            <Layers className="text-white w-6 h-6" />
+        <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-16 h-16 bg-primary rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/30 rotate-3">
+            <Layers className="text-white w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold font-headline">Добро пожаловать в Полочку</h1>
-          <p className="text-muted-foreground">Любимый сервис обмена вещами</p>
+          <h1 className="text-3xl font-bold font-headline mb-2 tracking-tight">Добро пожаловать в kmsX</h1>
+          <p className="text-muted-foreground">Лучший способ меняться вещами</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl bg-muted p-1 mb-6">
-            <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Вход</TabsTrigger>
-            <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Регистрация</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-14 rounded-2xl bg-muted/50 p-1 mb-6 border">
+            <TabsTrigger value="login" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md font-medium">Вход</TabsTrigger>
+            <TabsTrigger value="signup" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md font-medium">Регистрация</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
-            <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
-              <CardHeader className="pt-8 px-8">
-                <CardTitle className="text-xl">Войти</CardTitle>
-                <CardDescription>Введите данные для доступа к вашему аккаунту.</CardDescription>
+            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="pt-10 px-10">
+                <CardTitle className="text-2xl">Войти</CardTitle>
+                <CardDescription>Введите данные для доступа к kmsX.</CardDescription>
               </CardHeader>
               <form onSubmit={handleLogin}>
-                <CardContent className="space-y-4 p-8">
+                <CardContent className="space-y-4 p-10">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
@@ -93,7 +99,7 @@ export default function AuthPage() {
                         id="email" 
                         type="email" 
                         placeholder="name@example.com" 
-                        className="pl-10 h-12 rounded-xl" 
+                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -101,15 +107,13 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Пароль</Label>
-                    </div>
+                    <Label htmlFor="password">Пароль</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input 
                         id="password" 
                         type="password" 
-                        className="pl-10 h-12 rounded-xl" 
+                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -117,12 +121,12 @@ export default function AuthPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="p-8 pt-0">
-                  <Button type="submit" className="w-full h-12 rounded-xl group" disabled={loading}>
-                    {loading ? "Вход..." : (
+                <CardFooter className="p-10 pt-0">
+                  <Button type="submit" className="w-full h-14 rounded-2xl group shadow-lg shadow-primary/20 text-lg font-bold" disabled={loading}>
+                    {loading ? "Загрузка..." : (
                       <>
                         Войти
-                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </Button>
@@ -132,21 +136,21 @@ export default function AuthPage() {
           </TabsContent>
 
           <TabsContent value="signup">
-            <Card className="border-none shadow-xl rounded-[2rem] overflow-hidden">
-              <CardHeader className="pt-8 px-8">
-                <CardTitle className="text-xl">Создать аккаунт</CardTitle>
-                <CardDescription>Присоединяйтесь к сообществу сегодня.</CardDescription>
+            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="pt-10 px-10">
+                <CardTitle className="text-2xl">Новый аккаунт</CardTitle>
+                <CardDescription>Станьте частью сообщества kmsX.</CardDescription>
               </CardHeader>
               <form onSubmit={handleSignUp}>
-                <CardContent className="space-y-4 p-8">
+                <CardContent className="space-y-4 p-10">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Полное имя</Label>
+                    <Label htmlFor="name">Имя</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input 
                         id="name" 
-                        placeholder="Иван Иванов" 
-                        className="pl-10 h-12 rounded-xl" 
+                        placeholder="Ваше имя" 
+                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -160,8 +164,8 @@ export default function AuthPage() {
                       <Input 
                         id="reg-email" 
                         type="email" 
-                        placeholder="name@example.com" 
-                        className="pl-10 h-12 rounded-xl" 
+                        placeholder="email@example.com" 
+                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -175,7 +179,7 @@ export default function AuthPage() {
                       <Input 
                         id="reg-password" 
                         type="password" 
-                        className="pl-10 h-12 rounded-xl" 
+                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -183,9 +187,9 @@ export default function AuthPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="p-8 pt-0">
-                  <Button type="submit" className="w-full h-12 rounded-xl bg-accent text-accent-foreground hover:bg-accent/90" disabled={loading}>
-                    {loading ? "Создание аккаунта..." : "Зарегистрироваться"}
+                <CardFooter className="p-10 pt-0">
+                  <Button type="submit" className="w-full h-14 rounded-2xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20 text-lg font-bold" disabled={loading}>
+                    {loading ? "Создание..." : "Зарегистрироваться"}
                   </Button>
                 </CardFooter>
               </form>

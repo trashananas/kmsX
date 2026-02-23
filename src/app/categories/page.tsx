@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Shirt, 
   Smartphone, 
@@ -61,11 +63,18 @@ const DEFAULT_CATEGORIES = [
 
 export default function CategoriesPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth');
+    }
+  }, [user, isUserLoading, router]);
 
   const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
   const { data: categories, isLoading } = useCollection(categoriesQuery);
@@ -83,7 +92,7 @@ export default function CategoriesPage() {
       });
       
       toast({
-        title: "Категория добавлена",
+        title: "kmsX: Категория добавлена",
         description: `Категория "${newCategoryName}" успешно создана.`,
       });
       setNewCategoryName('');
@@ -105,7 +114,6 @@ export default function CategoriesPage() {
     try {
       const categoriesRef = collection(firestore, 'categories');
       for (const catName of DEFAULT_CATEGORIES) {
-        // Проверяем, нет ли уже такой категории в списке (локально)
         const exists = categories?.some(c => c.name === catName);
         if (!exists) {
           addDocumentNonBlocking(categoriesRef, {
@@ -115,8 +123,8 @@ export default function CategoriesPage() {
         }
       }
       toast({
-        title: "Готово",
-        description: "Стандартные категории восстановлены.",
+        title: "kmsX: Категории готовы",
+        description: "Стандартная структура разделов восстановлена.",
       });
     } catch (error) {
       toast({
@@ -129,87 +137,93 @@ export default function CategoriesPage() {
     }
   };
 
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="container px-4 py-12 max-w-5xl mx-auto">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
+    <div className="container px-4 py-12 max-w-5xl mx-auto flex-1">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-16 gap-8">
         <div className="text-center md:text-left">
-          <h1 className="text-4xl font-headline font-bold mb-4">Все категории</h1>
-          <p className="text-muted-foreground">Выберите интересующий вас раздел или добавьте свой</p>
+          <h1 className="text-4xl font-headline font-bold mb-4 tracking-tight">Разделы kmsX</h1>
+          <p className="text-muted-foreground text-lg">Выберите нужную категорию или создайте свою</p>
         </div>
         
-        <div className="flex gap-3">
-          {user && categories && categories.length === 0 && (
+        <div className="flex gap-4">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-2xl h-14 px-8 gap-3 shadow-xl shadow-primary/20 text-lg">
+                <Plus className="w-6 h-6" />
+                Своя категория
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] rounded-[2.5rem] p-8">
+              <DialogHeader>
+                <DialogTitle className="text-2xl">Новая категория</DialogTitle>
+                <DialogDescription>
+                  Введите название для нового раздела kmsX.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddCategory}>
+                <div className="grid gap-6 py-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="cat-name">Название</Label>
+                    <Input 
+                      id="cat-name" 
+                      placeholder="Например, Антиквариат или Растения" 
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      required
+                      className="h-14 rounded-2xl bg-muted/30 border-none text-lg px-6"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" className="w-full h-14 rounded-2xl text-lg font-bold" disabled={isSubmitting}>
+                    {isSubmitting ? "Добавление..." : "Добавить раздел"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {categories && categories.length === 0 && (
             <Button 
               variant="outline" 
               onClick={seedCategories} 
               disabled={isSeeding}
-              className="rounded-xl h-12 px-6 gap-2"
+              className="rounded-2xl h-14 px-8 gap-3"
             >
-              <RefreshCw className={`w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
-              Вернуть стандартные
+              <RefreshCw className={`w-5 h-5 ${isSeeding ? 'animate-spin' : ''}`} />
+              Стандартные
             </Button>
-          )}
-
-          {user && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="rounded-xl h-12 px-6 gap-2 shadow-lg shadow-primary/20">
-                  <Plus className="w-5 h-5" />
-                  Своя категория
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] rounded-[2rem]">
-                <DialogHeader>
-                  <DialogTitle>Новая категория</DialogTitle>
-                  <DialogDescription>
-                    Введите название для новой категории вещей. Она появится в общем списке.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleAddCategory}>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cat-name">Название</Label>
-                      <Input 
-                        id="cat-name" 
-                        placeholder="Например, Винил или Растения" 
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        required
-                        className="h-12 rounded-xl"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" className="w-full h-12 rounded-xl" disabled={isSubmitting}>
-                      {isSubmitting ? "Добавление..." : "Добавить"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
           )}
         </div>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <Skeleton key={i} className="h-48 rounded-2xl" />
+            <Skeleton key={i} className="h-56 rounded-[2.5rem]" />
           ))}
         </div>
       ) : categories && categories.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {categories.map((cat) => {
             const Icon = ICON_MAP[cat.name] || LayoutGrid;
             const color = COLOR_MAP[cat.name] || 'bg-muted text-muted-foreground';
             return (
               <Link key={cat.id} href={`/items?category=${cat.id}`}>
-                <Card className="border-none shadow-sm hover:shadow-md transition-all group cursor-pointer h-full">
-                  <CardContent className="p-8 flex flex-col items-center text-center">
-                    <div className={`w-16 h-16 rounded-2xl ${color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                      <Icon className="w-8 h-8" />
+                <Card className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group cursor-pointer h-full rounded-[2.5rem] bg-white overflow-hidden">
+                  <CardContent className="p-10 flex flex-col items-center text-center">
+                    <div className={`w-20 h-20 rounded-[1.5rem] ${color} flex items-center justify-center mb-8 group-hover:rotate-12 transition-transform shadow-sm`}>
+                      <Icon className="w-10 h-10" />
                     </div>
-                    <h3 className="font-bold text-lg mb-1">{cat.name}</h3>
+                    <h3 className="font-bold text-xl mb-1">{cat.name}</h3>
                   </CardContent>
                 </Card>
               </Link>
@@ -217,20 +231,14 @@ export default function CategoriesPage() {
           })}
         </div>
       ) : (
-        <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed">
-          <PackageSearch className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Категории не созданы</h2>
-          <p className="text-muted-foreground mb-8">Будьте первым, кто создаст структуру нашего обмена!</p>
-          {!user ? (
-            <Link href="/auth">
-              <Button variant="outline">Войти, чтобы добавить</Button>
-            </Link>
-          ) : (
-             <Button variant="outline" onClick={seedCategories} disabled={isSeeding}>
-               <RefreshCw className={`mr-2 w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
-               Восстановить стандартные
-             </Button>
-          )}
+        <div className="text-center py-32 bg-white rounded-[4rem] border border-dashed border-muted-foreground/20">
+          <PackageSearch className="w-16 h-16 text-muted-foreground/20 mx-auto mb-6" />
+          <h2 className="text-2xl font-bold mb-3">Категории не созданы</h2>
+          <p className="text-muted-foreground mb-10 max-w-sm mx-auto">kmsX еще пуст. Начните с восстановления стандартных разделов.</p>
+          <Button variant="outline" onClick={seedCategories} disabled={isSeeding} className="rounded-2xl h-14 px-10 text-lg">
+            <RefreshCw className={`mr-3 w-5 h-5 ${isSeeding ? 'animate-spin' : ''}`} />
+            Восстановить стандартные
+          </Button>
         </div>
       )}
     </div>
