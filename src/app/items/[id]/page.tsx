@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use } from 'react';
@@ -13,7 +14,10 @@ import {
   MessageCircle,
   Clock,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  Banknote,
+  Wallet,
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +70,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
     deleteDocumentNonBlocking(itemRef as any);
     toast({
       title: "Объявление удалено",
-      description: "Вещь больше не отображается в поиске.",
+      description: "Вещь больше не отображается в поиске kmsX.",
     });
     router.push('/items');
   };
@@ -141,8 +145,20 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
                 </Badge>
               )}
             </div>
-            <h1 className="text-4xl font-headline font-bold mb-4 leading-tight">{item.title}</h1>
+            <h1 className="text-4xl font-headline font-bold mb-2 leading-tight">{item.title}</h1>
             
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-3xl font-bold text-primary">
+                {item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}
+              </span>
+              {item.quantity > 1 && (
+                <Badge variant="outline" className="rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground">
+                  <Package className="w-3.5 h-3.5" />
+                  В наличии: {item.quantity} шт.
+                </Badge>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-8">
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-primary" />
@@ -164,6 +180,16 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {item.description}
               </p>
+              
+              {item.bank && (
+                <div className="mt-6 pt-6 border-t border-dashed flex items-center gap-3">
+                  <Wallet className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Банк для оплаты</p>
+                    <p className="font-bold">{item.bank}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4 p-4 border rounded-2xl bg-white shadow-sm">
@@ -171,7 +197,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
                 <User className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium">Владелец объявления</p>
+                <p className="text-sm font-medium">Владелец kmsX</p>
                 <p className="text-xs text-muted-foreground">На связи для обмена</p>
               </div>
               <div className="ml-auto">
@@ -199,7 +225,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
                     </div>
                     <AlertDialogTitle className="text-xl">Вы уверены?</AlertDialogTitle>
                     <AlertDialogDescription className="text-muted-foreground">
-                      Это действие нельзя будет отменить. Ваше объявление «{item.title}» будет удалено из базы данных навсегда.
+                      Это действие нельзя будет отменить. Ваше объявление «{item.title}» будет удалено из kmsX навсегда.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-2 sm:gap-0">
@@ -216,7 +242,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
             ) : (
               <Button className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-primary/20">
                 <MessageCircle className="w-5 h-5" />
-                Предложить обмен
+                {item.price > 0 ? 'Купить в kmsX' : 'Хочу забрать'}
               </Button>
             )}
             <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-2">

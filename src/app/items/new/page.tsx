@@ -3,7 +3,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, UploadCloud, ChevronLeft, X } from 'lucide-react';
+import { MapPin, UploadCloud, ChevronLeft, X, Wallet, Package, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +35,9 @@ export default function NewItemListing() {
     categoryId: '',
     condition: '',
     locationName: '',
+    price: '',
+    bank: '',
+    quantity: '1',
   });
 
   const categoriesQuery = useMemoFirebase(() => {
@@ -83,9 +86,11 @@ export default function NewItemListing() {
         categoryId: formData.categoryId,
         condition: formData.condition,
         locationName: formData.locationName,
+        price: formData.price ? parseFloat(formData.price) : 0,
+        bank: formData.bank || '',
+        quantity: formData.quantity ? parseInt(formData.quantity) : 1,
         ownerId: user.uid,
         status: 'available',
-        // Используем загруженное фото или заглушку
         imageUrls: [previewImage || `https://picsum.photos/seed/${Math.random()}/600/800`],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -97,7 +102,7 @@ export default function NewItemListing() {
       
       toast({
         title: "Успех!",
-        description: "Ваше объявление опубликовано.",
+        description: "Ваше объявление опубликовано в kmsX.",
       });
       router.push('/items');
     } catch (error) {
@@ -120,8 +125,8 @@ export default function NewItemListing() {
 
       <div className="bg-white rounded-[2rem] p-8 shadow-sm border">
         <div className="mb-8">
-          <h1 className="text-3xl font-headline font-bold mb-2">Новое объявление</h1>
-          <p className="text-muted-foreground">Чем вы хотите поделиться сегодня?</p>
+          <h1 className="text-3xl font-headline font-bold mb-2">Новое объявление kmsX</h1>
+          <p className="text-muted-foreground">Опишите вашу вещь для обмена или продажи</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -187,9 +192,6 @@ export default function NewItemListing() {
                     {categories?.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
-                    {!categories?.length && (
-                      <SelectItem value="none" disabled>Категории не найдены</SelectItem>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -208,13 +210,57 @@ export default function NewItemListing() {
                 </Select>
               </div>
             </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Цена (необязательно)</Label>
+                <div className="relative">
+                  <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    id="price" 
+                    type="number" 
+                    placeholder="0" 
+                    className="pl-10 h-12 rounded-xl"
+                    value={formData.price}
+                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bank">Банк для оплаты</Label>
+                <div className="relative">
+                  <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    id="bank" 
+                    placeholder="Сбер, Тинькофф..." 
+                    className="pl-10 h-12 rounded-xl"
+                    value={formData.bank}
+                    onChange={(e) => setFormData({...formData, bank: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Количество</Label>
+                <div className="relative">
+                  <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    id="quantity" 
+                    type="number" 
+                    placeholder="1" 
+                    className="pl-10 h-12 rounded-xl"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Описание</Label>
             <Textarea 
               id="description" 
-              placeholder="Опишите вещь..." 
+              placeholder="Расскажите о вещи подробнее..." 
               className="min-h-[120px] rounded-xl resize-none"
               required
               value={formData.description}
@@ -237,8 +283,8 @@ export default function NewItemListing() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/20" disabled={loading}>
-            {loading ? "Публикация..." : "Опубликовать"}
+          <Button type="submit" className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/20 font-bold" disabled={loading}>
+            {loading ? "Публикация..." : "Опубликовать в kmsX"}
           </Button>
         </form>
       </div>

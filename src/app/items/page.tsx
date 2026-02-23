@@ -3,9 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, MapPin, PackageOpen, RefreshCw } from 'lucide-react';
+import { Search, Filter, MapPin, PackageOpen, RefreshCw, ZapOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import ItemCard from '@/components/items/ItemCard';
 import CategoryFilter from '@/components/items/CategoryFilter';
 import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
@@ -14,21 +16,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 
 const MOCK_ITEMS_DATA = [
-  { title: "Куртка Columbia", categoryName: "Одежда", condition: "Хорошее", description: "Теплая куртка для зимы. Состояние отличное." },
-  { title: "Canon EOS 5D", categoryName: "Электроника", condition: "Как новое", description: "Профессиональная камера. Пробег небольшой." },
-  { title: "Война и мир", categoryName: "Книги", condition: "Хорошее", description: "Все тома в одном издании." },
-  { title: "Кресло IKEA", categoryName: "Мебель", condition: "Среднее", description: "Удобное кресло, есть небольшие потертости." },
-  { title: "LEGO Star Wars", categoryName: "Игрушки", condition: "Новое", description: "Запечатанная коробка." },
-  { title: "Горный велосипед", categoryName: "Спорт", condition: "Хорошее", description: "21 скорость, дисковые тормоза." },
-  { title: "iPhone 12", categoryName: "Электроника", condition: "Как новое", description: "Без сколов и царапин." },
-  { title: "Свитер шерстяной", categoryName: "Одежда", condition: "Хорошее", description: "Очень теплый, ручная вязка." },
-  { title: "Гитара акустическая", categoryName: "Электроника", condition: "Хорошее", description: "Звучит отлично, новые струны." },
-  { title: "Набор посуды", categoryName: "Мебель", condition: "Новое", description: "Комплект на 6 персон." },
+  { title: "Куртка Columbia", categoryName: "Одежда", condition: "Хорошее", description: "Теплая куртка для зимы. Состояние отличное.", price: 0 },
+  { title: "Canon EOS 5D", categoryName: "Электроника", condition: "Как новое", description: "Профессиональная камера. Пробег небольшой.", price: 50000 },
+  { title: "Война и мир", categoryName: "Книги", condition: "Хорошее", description: "Все тома в одном издании.", price: 0 },
+  { title: "Кресло IKEA", categoryName: "Мебель", condition: "Среднее", description: "Удобное кресло, есть небольшие потертости.", price: 1500 },
+  { title: "LEGO Star Wars", categoryName: "Игрушки", condition: "Новое", description: "Запечатанная коробка.", price: 8000 },
+  { title: "Горный велосипед", categoryName: "Спорт", condition: "Хорошее", description: "21 скорость, дисковые тормоза.", price: 12000 },
+  { title: "iPhone 12", categoryName: "Электроника", condition: "Как новое", description: "Без сколов и царапин.", price: 35000 },
+  { title: "Свитер шерстяной", categoryName: "Одежда", condition: "Хорошее", description: "Очень теплый, ручная вязка.", price: 0 },
+  { title: "Гитара акустическая", categoryName: "Электроника", condition: "Хорошее", description: "Звучит отлично, новые струны.", price: 5000 },
+  { title: "Набор посуды", categoryName: "Мебель", condition: "Новое", description: "Комплект на 6 персон.", price: 0 },
 ];
 
 export default function BrowseItems() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
+  const [showOnlyFree, setShowOnlyFree] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -54,10 +57,13 @@ export default function BrowseItems() {
       if (selectedCategoryId !== 'all') {
         q = query(q, where('categoryId', '==', selectedCategoryId));
       }
+      if (showOnlyFree) {
+        q = query(q, where('price', '==', 0));
+      }
     }
     
     return q;
-  }, [firestore, selectedCategoryId, showOnlyMine, user]);
+  }, [firestore, selectedCategoryId, showOnlyMine, showOnlyFree, user]);
 
   const { data: items, isLoading } = useCollection(itemsQuery);
   
@@ -94,6 +100,9 @@ export default function BrowseItems() {
           description: mock.description,
           categoryId: category.id,
           condition: mock.condition,
+          price: mock.price,
+          bank: mock.price > 0 ? "Сбер" : "",
+          quantity: 1,
           ownerId: user.uid,
           status: 'available',
           imageUrls: [`https://picsum.photos/seed/${Math.random()}/600/800`],
@@ -141,6 +150,14 @@ export default function BrowseItems() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <div className="flex items-center gap-3 px-4 h-12 bg-muted/30 rounded-2xl border border-transparent">
+            <Switch 
+              id="free-mode" 
+              checked={showOnlyFree} 
+              onCheckedChange={setShowOnlyFree}
+            />
+            <Label htmlFor="free-mode" className="text-sm font-medium whitespace-nowrap cursor-pointer">Бесплатно</Label>
+          </div>
           <div className="flex gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2 px-5 h-12 bg-muted/30 rounded-2xl text-sm font-medium border border-transparent hover:border-primary/20 transition-all cursor-pointer">
               <MapPin className="w-4 h-4 text-primary" />
@@ -155,7 +172,7 @@ export default function BrowseItems() {
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="w-full lg:w-64 shrink-0">
             <div className="sticky top-24">
-              <h2 className="text-xl font-bold mb-6 px-2">Категории</h2>
+              <h2 className="text-xl font-bold mb-6 px-2">Разделы</h2>
               <CategoryFilter 
                 selectedId={selectedCategoryId} 
                 onSelect={setSelectedCategoryId} 
@@ -167,6 +184,7 @@ export default function BrowseItems() {
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl font-bold font-headline tracking-tight">
                 {showOnlyMine ? 'Мои вещи' : (selectedCategoryId === 'all' ? 'Все вещи' : 'Результаты')}
+                {showOnlyFree && <span className="text-accent ml-2 text-lg">(Бесплатно)</span>}
                 {!isLoading && <span className="text-muted-foreground font-normal text-lg ml-3">({filteredItems.length})</span>}
               </h1>
               {filteredItems.length === 0 && !isLoading && !showOnlyMine && (
@@ -197,7 +215,7 @@ export default function BrowseItems() {
                     title: item.title,
                     category: categories?.find(c => c.id === item.categoryId)?.name || 'Разное',
                     location: item.locationName || 'Не указано',
-                    distance: 'Рядом',
+                    distance: item.price > 0 ? `${item.price} ₽` : 'Бесплатно',
                     image: item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/600',
                     condition: item.condition
                   }} />
@@ -208,9 +226,9 @@ export default function BrowseItems() {
                 <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
                   <PackageOpen className="w-12 h-12 text-muted-foreground/30" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Здесь пока тихо</h3>
+                <h3 className="text-2xl font-bold mb-3">Ничего не найдено</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-                  {showOnlyMine ? "Вы еще ничего не выставили на kmsX." : "Будьте первым, кто предложит вещь в kmsX!"}
+                  {showOnlyFree ? "Бесплатных вещей в этом разделе пока нет." : "Будьте первым, кто предложит вещь в kmsX!"}
                 </p>
                 {!showOnlyMine && (
                   <Button variant="outline" onClick={seedMockItems} disabled={isSeeding} className="rounded-2xl h-12 px-8">

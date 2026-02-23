@@ -121,7 +121,15 @@
         },
         "price": {
           "type": "number",
-          "description": "Optional monetary context."
+          "description": "Optional monetary price. 0 or null means free."
+        },
+        "bank": {
+          "type": "string",
+          "description": "Preferred bank for payment."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Number of items available."
         },
         "imageUrls": {
           "type": "array",
