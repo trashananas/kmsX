@@ -1,0 +1,193 @@
+"use client";
+
+import { use } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { 
+  ChevronLeft, 
+  MapPin, 
+  Tag, 
+  Calendar, 
+  User, 
+  Trash2, 
+  MessageCircle,
+  Clock,
+  ShieldCheck
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  useDoc, 
+  useFirestore, 
+  useUser, 
+  deleteDocumentNonBlocking,
+  useMemoFirebase
+} from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
+
+export default function ItemDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
+  const { id } = use(params);
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const itemRef = useMemoFirebase(() => doc(firestore, 'item_listings', id), [firestore, id]);
+  const { data: item, isLoading } = useDoc(itemRef);
+
+  const categoryRef = useMemoFirebase(() => 
+    item?.categoryId ? doc(firestore, 'categories', item.categoryId) : null
+  , [firestore, item?.categoryId]);
+  const { data: category } = useDoc(categoryRef);
+
+  const handleDelete = () => {
+    if (!item || !user || item.ownerId !== user.uid) return;
+    
+    if (confirm('Вы уверены, что хотите удалить это объявление?')) {
+      deleteDocumentNonBlocking(itemRef as any);
+      toast({
+        title: "Объявление удалено",
+        description: "Вещь больше не отображается в поиске.",
+      });
+      router.push('/items');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container px-4 py-8 max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-8">
+          <Skeleton className="w-full md:w-1/2 aspect-[4/5] rounded-[2rem]" />
+          <div className="flex-1 space-y-6">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="container px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold mb-4">Объявление не найдено</h1>
+        <Link href="/items">
+          <Button variant="outline">Вернуться к списку</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const isOwner = user && item.ownerId === user.uid;
+  const formattedDate = item.createdAt 
+    ? format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru }) 
+    : 'Недавно';
+
+  return (
+    <div className="container px-4 py-8 max-w-5xl mx-auto">
+      <Link href="/items" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group w-fit">
+        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Назад к списку
+      </Link>
+
+      <div className="flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border">
+        {/* Image Section */}
+        <div className="w-full md:w-1/2">
+          <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
+            <Image 
+              src={item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} 
+              alt={item.title} 
+              fill 
+              className="object-cover"
+              priority
+            />
+            <div className="absolute top-4 left-4">
+              <Badge className="bg-white/90 text-primary hover:bg-white border-none px-4 py-1.5 shadow-sm text-sm font-bold backdrop-blur-md">
+                {item.condition}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Section */}
+        <div className="flex-1 flex flex-col">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1">
+                {category?.name || 'Разное'}
+              </Badge>
+              {item.status === 'available' && (
+                <Badge className="bg-emerald-100 text-emerald-600 border-none px-3 py-1">
+                  Свободно
+                </Badge>
+              )}
+            </div>
+            <h1 className="text-4xl font-headline font-bold mb-4 leading-tight">{item.title}</h1>
+            
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-8">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-primary" />
+                {item.locationName}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-primary" />
+                Добавлено {formattedDate}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6 flex-1">
+            <div className="p-6 bg-muted/30 rounded-2xl border border-dashed">
+              <h3 className="font-bold mb-3 flex items-center gap-2">
+                <Tag className="w-4 h-4 text-primary" />
+                Описание
+              </h3>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {item.description}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 p-4 border rounded-2xl bg-white shadow-sm">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                <User className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Владелец объявления</p>
+                <p className="text-xs text-muted-foreground">На связи для обмена</p>
+              </div>
+              <div className="ml-auto">
+                <ShieldCheck className="w-5 h-5 text-emerald-500" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 flex gap-4">
+            {isOwner ? (
+              <Button 
+                variant="destructive" 
+                className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-destructive/20"
+                onClick={handleDelete}
+              >
+                <Trash2 className="w-5 h-5" />
+                Удалить вещь
+              </Button>
+            ) : (
+              <Button className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-primary/20">
+                <MessageCircle className="w-5 h-5" />
+                Предложить обмен
+              </Button>
+            )}
+            <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-2">
+              <MessageCircle className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
