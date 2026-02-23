@@ -28,7 +28,7 @@ export default function NewItemListing() {
     
     // Simulate API call
     setTimeout(() => {
-      setOpen(false);
+      setLoading(false);
       toast({
         title: "Вещь успешно добавлена!",
         description: "Ваше объявление теперь видно людям в вашем районе.",
@@ -51,7 +51,6 @@ export default function NewItemListing() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Photo Upload Area */}
           <div className="space-y-2">
             <Label>Фотографии</Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
