@@ -3,30 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // РЕЖИМ ПОЛНОЙ ЛОЯЛЬНОСТИ ДЛЯ РАЗРАБОТКИ
-    // Разрешаем всё для всех коллекций
-    // Последнее обновление: 2024-05-24 17:45:00 (Force Redeploy for Chats)
+    // Разрешаем всё для всех коллекций без исключения
+    // Последнее обновление: 2024-05-24 18:30:00 (Global Open Access)
 
-    match /users/{userId} {
-      allow read, write: if true;
-    }
-    
-    match /chats/{chatId} {
-      allow read, write: if true;
-      
-      match /messages/{messageId} {
-        allow read, write: if true;
-      }
-    }
-    
-    match /item_listings/{itemId} {
-      allow read, write: if true;
-    }
-    
-    match /categories/{catId} {
-      allow read, write: if true;
-    }
-
-    // Глобальный доступ для любых других путей
     match /{document=**} {
       allow read, write: if true;
     }
