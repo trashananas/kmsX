@@ -1,15 +1,59 @@
 
 "use client";
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, Package, User, Banknote, RefreshCw } from 'lucide-react';
+import { History, Package, User, Banknote } from 'lucide-react';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+
+function SaleRow({ sale }: { sale: any }) {
+  const firestore = useFirestore();
+  const buyerRef = useMemoFirebase(() => doc(firestore, 'users', sale.buyerId), [firestore, sale.buyerId]);
+  const { data: buyerProfile } = useDoc(buyerRef as any);
+
+  return (
+    <Card className="rounded-[2.5rem] border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
+      <CardContent className="p-6 flex items-center gap-6">
+        <div className="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0 shadow-sm">
+          <Image 
+            src={sale.itemImage || 'https://picsum.photos/seed/1/200/200'} 
+            alt="" 
+            fill 
+            className="object-cover" 
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-xl font-bold truncate pr-4">{sale.itemTitle}</h3>
+            <span className="text-lg font-black text-primary whitespace-nowrap">{sale.price} ₽</span>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Package className="w-4 h-4 text-primary/40" />
+              <span className="font-medium">Кол-во: <span className="text-foreground">{sale.quantity || 1} шт.</span></span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <User className="w-4 h-4 text-primary/40" />
+              <span className="font-medium">Покупатель: <span className="text-foreground">{buyerProfile?.username || 'Анонимный покупатель'}</span></span>
+            </div>
+            {sale.updatedAt && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <span className="text-xs italic">{format(new Date(sale.updatedAt), 'd MMMM yyyy', { locale: ru })}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SalesHistoryPage() {
   const { user } = useUser();
@@ -47,41 +91,7 @@ export default function SalesHistoryPage() {
         <div className="grid gap-6">
           <div className="space-y-4">
             {sales.map((sale) => (
-              <Card key={sale.id} className="rounded-[2.5rem] border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
-                <CardContent className="p-6 flex items-center gap-6">
-                  <div className="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0 shadow-sm">
-                    <Image 
-                      src={sale.itemImage || 'https://picsum.photos/seed/1/200/200'} 
-                      alt="" 
-                      fill 
-                      className="object-cover" 
-                    />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-xl font-bold truncate pr-4">{sale.itemTitle}</h3>
-                      <span className="text-lg font-black text-primary whitespace-nowrap">{sale.price} ₽</span>
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Package className="w-4 h-4 text-primary/40" />
-                        <span className="font-medium">Кол-во: <span className="text-foreground">{sale.quantity || 1} шт.</span></span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <User className="w-4 h-4 text-primary/40" />
-                        <span className="font-medium">Покупатель: <span className="text-foreground text-xs">{sale.buyerId}</span></span>
-                      </div>
-                      {sale.updatedAt && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <span className="text-xs italic">{format(new Date(sale.updatedAt), 'd MMMM yyyy', { locale: ru })}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <SaleRow key={sale.id} sale={sale} />
             ))}
           </div>
         </div>
