@@ -1,14 +1,27 @@
 
-import type {Metadata} from 'next';
+"use client";
+
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider, useUser } from '@/firebase';
 
-export const metadata: Metadata = {
-  title: 'kmsX | Современный обмен вещами',
-  description: 'Обменивайтесь вещами с соседями быстро и безопасно в kmsX. Лучший способ дать вещам вторую жизнь.',
-};
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isUserLoading } = useUser();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Если загрузка завершена, пользователя нет, и это не главная или страница входа - редирект на регистрацию
+    if (!isUserLoading && !user && pathname !== '/' && pathname !== '/auth') {
+      router.push('/auth');
+    }
+  }, [user, isUserLoading, pathname, router]);
+
+  return <>{children}</>;
+}
 
 export default function RootLayout({
   children,
@@ -21,14 +34,17 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <title>kmsX | Современный обмен вещами</title>
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <FirebaseClientProvider>
-          <Navbar />
-          <div className="pt-16 min-h-screen flex flex-col">
-            {children}
-          </div>
-          <Toaster />
+          <AuthGuard>
+            <Navbar />
+            <div className="pt-16 min-h-screen flex flex-col">
+              {children}
+            </div>
+            <Toaster />
+          </AuthGuard>
         </FirebaseClientProvider>
       </body>
     </html>

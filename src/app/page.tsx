@@ -2,7 +2,6 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Zap, MapPin, RefreshCw, Layers } from 'lucide-react';
@@ -16,16 +15,16 @@ const features = [
     color: "bg-blue-100 text-blue-600"
   },
   {
-    title: "Свайпайте и находите",
-    description: "Открывайте для себя вещи в удобном формате Tinder-ленты.",
-    icon: Zap,
-    color: "bg-yellow-100 text-yellow-600"
-  },
-  {
-    title: "Обмен без отходов",
-    description: "Дайте вещам вторую жизнь и получите то, что вам нужно бесплатно.",
+    title: "Быстрый обмен",
+    description: "Договаривайтесь об обмене за считанные минуты.",
     icon: RefreshCw,
     color: "bg-emerald-100 text-emerald-600"
+  },
+  {
+    title: "Вторая жизнь",
+    description: "Дайте вещам вторую жизнь и получите то, что вам нужно бесплатно.",
+    icon: Layers,
+    color: "bg-orange-100 text-orange-600"
   }
 ];
 
@@ -48,19 +47,12 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user ? (
-              <>
-                <Link href="/items">
-                  <Button size="lg" className="px-10 h-14 text-lg rounded-2xl shadow-xl shadow-primary/20">
-                    Смотреть вещи
-                  </Button>
-                </Link>
-                <Link href="/swipe">
-                  <Button size="lg" variant="outline" className="px-10 h-14 text-lg gap-2 rounded-2xl">
-                    <Zap className="w-5 h-5 fill-accent text-accent" />
-                    Режим свайпа
-                  </Button>
-                </Link>
-              </>
+              <Link href="/items">
+                <Button size="lg" className="px-12 h-16 text-xl rounded-2xl shadow-2xl shadow-primary/30 group">
+                  Смотреть вещи
+                  <Zap className="ml-2 w-6 h-6 group-hover:scale-125 transition-transform fill-white" />
+                </Button>
+              </Link>
             ) : (
               <Link href="/auth">
                 <Button size="lg" className="px-12 h-16 text-xl rounded-2xl shadow-2xl shadow-primary/30 group">

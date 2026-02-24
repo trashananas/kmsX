@@ -1,9 +1,10 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, Layers, User, Zap, LogOut, Heart } from 'lucide-react';
+import { PlusCircle, Compass, Layers, User, LogOut, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
@@ -19,7 +20,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
-  { label: 'Свайп', href: '/swipe', icon: Zap },
   { label: 'Категории', href: '/categories', icon: Layers },
   { label: 'Лайки', href: '/favorites', icon: Heart },
 ];
@@ -27,13 +27,22 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     await logOut(auth);
     router.push('/auth');
   };
+
+  if (!mounted) return (
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b h-16" />
+  );
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
@@ -116,8 +125,8 @@ export default function Navbar() {
             </DropdownMenu>
           ) : pathname !== '/auth' ? (
             <Link href="/auth">
-              <Button variant="outline" size="sm" className="rounded-xl px-5 border-primary text-primary hover:bg-primary/5">
-                Войти
+              <Button variant="outline" size="sm" className="rounded-xl px-5 border-primary text-primary hover:bg-primary/5 font-bold">
+                Зарегистрироваться
               </Button>
             </Link>
           ) : null}

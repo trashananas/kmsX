@@ -44,7 +44,7 @@ export default function FavoritesPage() {
           <Heart className="w-8 h-8 text-primary fill-primary" />
           Понравившиеся вещи
         </h1>
-        <p className="text-muted-foreground">Вещи, которые вы отметили лайком в ленте или каталоге</p>
+        <p className="text-muted-foreground">Вещи, которые вы сохранили для будущего обмена</p>
       </div>
 
       {isLoading ? (
@@ -73,9 +73,9 @@ export default function FavoritesPage() {
             <PackageOpen className="w-10 h-10 text-muted-foreground/30" />
           </div>
           <h2 className="text-xl font-bold mb-2">У вас пока нет лайков</h2>
-          <p className="text-muted-foreground mb-8">Свайпайте вправо в ленте открытий, чтобы сохранить интересное!</p>
-          <Link href="/swipe">
-            <Button className="rounded-xl h-12 px-8">Перейти к свайпам</Button>
+          <p className="text-muted-foreground mb-8">Ищите интересные предложения в каталоге!</p>
+          <Link href="/items">
+            <Button className="rounded-xl h-12 px-8">Перейти в каталог</Button>
           </Link>
         </div>
       )}

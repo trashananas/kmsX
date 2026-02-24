@@ -4,7 +4,7 @@
 import { use, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
   MapPin, 
@@ -60,16 +60,11 @@ import { Label } from '@/components/ui/label';
 
 export default function ItemDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { id } = use(params);
   const firestore = useFirestore();
   const { user } = useUser();
   const [reserveCount, setReserveCount] = useState(1);
   const [isReserveOpen, setIsReserveOpen] = useState(false);
-
-  const from = searchParams.get('from');
-  const backLink = from === 'swipe' ? '/swipe' : '/items';
-  const backLabel = from === 'swipe' ? 'Назад к свайпам' : 'Назад к списку';
 
   const itemRef = useMemoFirebase(() => doc(firestore, 'item_listings', id), [firestore, id]);
   const { data: item, isLoading } = useDoc(itemRef);
@@ -164,9 +159,9 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="container px-4 py-8 max-w-5xl mx-auto">
-      <Link href={backLink} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group w-fit">
+      <Link href="/items" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group w-fit">
         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        {backLabel}
+        Назад к списку
       </Link>
 
       <div className={`flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border ${isSoldOut ? 'border-destructive/50' : ''}`}>
