@@ -1,32 +1,33 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // kmsX Security Rules - ПОЛНЫЙ ДОСТУП
-    // Разрешаем чтение и запись для всех коллекций и документов без ограничений.
-    // Это необходимо для бесперебойной работы функций каталога, чатов и X-Tok ленты.
+    // kmsX Security Rules - ПОЛНЫЙ И НЕОГРАНИЧЕННЫЙ ДОСТУП
+    // Мы разрешаем всем пользователям (включая анонимных) читать и записывать любые данные.
+    // Это критически важно для работы функций X-Tok (просмотр ленты, лайки, бронирование).
     
     match /{document=**} {
       allow read, write: if true;
     }
 
-    // Явное указание для коллекции товаров (на всякий случай)
+    // Явное разрешение для коллекции товаров (гарантирует работу X-Tok ленты)
     match /item_listings/{itemId} {
-      allow read, write: if true;
+      allow read, write, list: if true;
     }
 
-    // Явное указание для чатов и сообщений
+    // Явное разрешение для чатов и системы сообщений
     match /chats/{chatId} {
-      allow read, write: if true;
+      allow read, write, list: if true;
       match /messages/{messageId} {
-        allow read, write: if true;
+        allow read, write, list: if true;
       }
     }
 
-    // Явное указание для профилей пользователей и их избранного
+    // Явное разрешение для профилей и лайков пользователей
     match /users/{userId} {
       allow read, write: if true;
       match /favorites/{favoriteId} {
-        allow read, write: if true;
+        allow read, write, list: if true;
       }
     }
   }
