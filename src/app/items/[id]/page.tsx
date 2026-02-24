@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useState } from 'react';
@@ -99,6 +100,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
           itemTitle: item.title,
           itemImage: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/200/200',
           price: item.price || 0,
+          quantity: 1, // Default quantity for inquiry
           buyerId: user.uid,
           sellerId: item.ownerId,
           status: 'active',
@@ -151,6 +153,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       itemTitle: item.title,
       itemImage: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/200/200',
       price: item.price || 0,
+      quantity: reserveCount, // Store exact quantity in chat
       buyerId: user.uid,
       sellerId: item.ownerId,
       status: 'active',

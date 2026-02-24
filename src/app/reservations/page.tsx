@@ -6,13 +6,14 @@ import { collection, query, where, doc, getDocs } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, MessageCircle, ExternalLink, Trash2, ShoppingCart, RefreshCw } from 'lucide-react';
+import { Package, MessageCircle, ExternalLink, Trash2, ShoppingCart, RefreshCw, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ReservationsPage() {
   const { user } = useUser();
@@ -20,23 +21,31 @@ export default function ReservationsPage() {
   const router = useRouter();
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
 
-  const reservationsQuery = useMemoFirebase(() => {
+  // Активные брони из favorites
+  const favoritesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'users', user.uid, 'favorites'));
+  }, [firestore, user]);
+
+  // История завершенных покупок из chats
+  const historyQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(firestore, 'users', user.uid, 'favorites')
+      collection(firestore, 'chats'),
+      where('buyerId', '==', user.uid),
+      where('dealStatus', '==', 'completed')
     );
   }, [firestore, user]);
 
-  const { data: allFavorites, isLoading } = useCollection(reservationsQuery);
+  const { data: allFavorites, isLoading: loadingFavs } = useCollection(favoritesQuery);
+  const { data: purchaseHistory, isLoading: loadingHistory } = useCollection(historyQuery);
   
-  // Фильтруем только те, где reservedCount > 0 (аналог корзины)
   const reservations = allFavorites?.filter(fav => (fav.reservedCount || 0) > 0) || [];
 
   const handleCancelReservation = async (res: any) => {
     if (!user) return;
     setIsActionLoading(res.id);
     try {
-      // 1. Возвращаем количество товару
       const itemRef = doc(firestore, 'item_listings', res.itemId);
       const snapshot = await getDocs(query(collection(firestore, 'item_listings'), where('__name__', '==', res.itemId)));
       if (!snapshot.empty) {
@@ -48,24 +57,21 @@ export default function ReservationsPage() {
         });
       }
 
-      // 2. Удаляем бронь из избранного/корзины (или обнуляем счетчик)
       const favRef = doc(firestore, 'users', user.uid, 'favorites', res.id);
       updateDocumentNonBlocking(favRef, {
         reservedCount: 0,
         updatedAt: new Date().toISOString()
       });
 
-      // 3. Отправляем системное сообщение в чат
       const chatsRef = collection(firestore, 'chats');
       const chatSnap = await getDocs(query(chatsRef, where('itemId', '==', res.itemId), where('buyerId', '==', user.uid)));
       if (!chatSnap.empty) {
         const chatDoc = chatSnap.docs[0];
-        const messagesRef = collection(firestore, 'chats', chatDoc.id, 'messages');
         updateDocumentNonBlocking(doc(firestore, 'chats', chatDoc.id), {
           lastMessage: 'Бронирование отменено покупателем',
           updatedAt: new Date().toISOString()
         });
-        addDocumentNonBlocking(messagesRef, {
+        addDocumentNonBlocking(collection(firestore, 'chats', chatDoc.id, 'messages'), {
           senderId: 'system',
           text: `Покупатель отменил бронирование товара (${res.reservedCount} шт.)`,
           type: 'system',
@@ -73,29 +79,9 @@ export default function ReservationsPage() {
         });
       }
 
-      toast({ title: "Бронь отменена", description: "Товар снова доступен для других." });
+      toast({ title: "Бронь отменена" });
     } catch (error) {
       toast({ variant: "destructive", title: "Ошибка", description: "Не удалось отменить бронь." });
-    } finally {
-      setIsActionLoading(null);
-    }
-  };
-
-  const handleGoToChat = async (res: any) => {
-    if (!user) return;
-    setIsActionLoading(res.id + '_chat');
-    try {
-      const chatsRef = collection(firestore, 'chats');
-      const q = query(chatsRef, where('itemId', '==', res.itemId), where('buyerId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      
-      if (!snapshot.empty) {
-        router.push(`/chats/${snapshot.docs[0].id}`);
-      } else {
-        toast({ title: "Чат не найден", description: "Попробуйте зайти через страницу товара." });
-      }
-    } catch (error) {
-      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось найти чат." });
     } finally {
       setIsActionLoading(null);
     }
@@ -111,88 +97,124 @@ export default function ReservationsPage() {
             <ShoppingCart className="w-8 h-8 text-primary" />
             Мои покупки
           </h1>
-          <p className="text-muted-foreground">Вещи, которые вы зарезервировали или купили</p>
+          <p className="text-muted-foreground">Управление активными бронями и история ваших покупок</p>
         </div>
-        <Link href="/items">
-          <Button variant="outline" className="rounded-xl">В каталог</Button>
-        </Link>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-3xl" />)}
-        </div>
-      ) : reservations.length > 0 ? (
-        <div className="grid gap-6">
-          {reservations.map((res) => (
-            <Card key={res.id} className="rounded-[2.5rem] border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
-              <CardContent className="p-0">
-                <div className="flex flex-col sm:flex-row">
-                  <div className="relative w-full sm:w-48 h-48 shrink-0">
-                    <Image 
-                      src={res.imageUrl || 'https://picsum.photos/seed/1/400/400'} 
-                      alt={res.title} 
-                      fill 
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 p-8 flex flex-col justify-between">
-                    <div>
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-14 bg-muted/50 p-1 rounded-2xl mb-8">
+          <TabsTrigger value="active" className="rounded-xl font-bold">Активные ({reservations.length})</TabsTrigger>
+          <TabsTrigger value="history" className="rounded-xl font-bold">История ({purchaseHistory?.length || 0})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active">
+          {loadingFavs ? (
+            <div className="space-y-4">
+              {[1, 2].map(i => <Skeleton key={i} className="h-40 rounded-3xl" />)}
+            </div>
+          ) : reservations.length > 0 ? (
+            <div className="grid gap-6">
+              {reservations.map((res) => (
+                <Card key={res.id} className="rounded-[2.5rem] border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col sm:flex-row">
+                      <div className="relative w-full sm:w-48 h-48 shrink-0">
+                        <Image 
+                          src={res.imageUrl || 'https://picsum.photos/seed/1/400/400'} 
+                          alt={res.title} 
+                          fill 
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 p-8 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-2xl font-bold truncate pr-4">{res.title}</h3>
+                            <Badge className="bg-primary/10 text-primary border-none px-3 py-1">
+                              В брони: {res.reservedCount} шт.
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground text-sm mb-6">
+                            <Package className="w-4 h-4" />
+                            <span>Состояние: {res.condition || 'не указано'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-3">
+                          <Button 
+                            onClick={() => router.push(`/chats?itemId=${res.itemId}`)}
+                            className="rounded-xl h-12 px-6 gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                          >
+                            <MessageSquare className="w-4 h-4" /> Написать
+                          </Button>
+                          <Link href={`/items/${res.itemId}`}>
+                            <Button variant="outline" className="rounded-xl h-12 px-6 gap-2 border-primary/20 text-primary">
+                              <ExternalLink className="w-4 h-4" /> Просмотреть
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => handleCancelReservation(res)}
+                            disabled={isActionLoading === res.id}
+                            className="rounded-xl h-12 px-6 gap-2 text-rose-500 hover:bg-rose-50 ml-auto"
+                          >
+                            {isActionLoading === res.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            Отменить
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed">
+              <Package className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground font-medium">Активных броней пока нет</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="history">
+          {loadingHistory ? (
+            <div className="space-y-4">
+              {[1, 2].map(i => <Skeleton key={i} className="h-40 rounded-3xl" />)}
+            </div>
+          ) : purchaseHistory && purchaseHistory.length > 0 ? (
+            <div className="grid gap-6">
+              {purchaseHistory.map((chat) => (
+                <Card key={chat.id} className="rounded-[2.5rem] border-none shadow-sm bg-white/50 grayscale-[0.5]">
+                  <CardContent className="p-0 flex flex-col sm:flex-row items-center">
+                    <div className="relative w-full sm:w-32 h-32 shrink-0 m-4 rounded-2xl overflow-hidden">
+                      <Image src={chat.itemImage || 'https://picsum.photos/seed/1/400/400'} alt="" fill className="object-cover" />
+                    </div>
+                    <div className="flex-1 p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-2xl font-bold truncate pr-4">{res.title}</h3>
-                        <Badge className="bg-emerald-100 text-emerald-600 border-none px-3 py-1">
-                          Забронировано: {res.reservedCount} шт.
-                        </Badge>
+                        <h3 className="text-xl font-bold">{chat.itemTitle}</h3>
+                        <div className="text-right">
+                          <p className="text-lg font-black text-primary">{chat.price} ₽</p>
+                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Куплено</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-6">
-                        <Package className="w-4 h-4" />
-                        <span>Состояние: {res.condition || 'не указано'}</span>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground font-medium">
+                        <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Сделка завершена</span>
+                        <span>•</span>
+                        <span>Количество: {chat.quantity || 1} шт.</span>
                       </div>
                     </div>
-                    
-                    <div className="flex flex-wrap gap-3">
-                      <Button 
-                        onClick={() => handleGoToChat(res)}
-                        disabled={isActionLoading === res.id + '_chat'}
-                        className="rounded-xl h-12 px-6 gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
-                      >
-                        {isActionLoading === res.id + '_chat' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-                        Написать
-                      </Button>
-                      <Link href={`/items/${res.itemId}`}>
-                        <Button variant="outline" className="rounded-xl h-12 px-6 gap-2 border-primary/20 text-primary">
-                          <ExternalLink className="w-4 h-4" />
-                          Просмотреть
-                        </Button>
-                      </Link>
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => handleCancelReservation(res)}
-                        disabled={isActionLoading === res.id}
-                        className="rounded-xl h-12 px-6 gap-2 text-rose-500 hover:bg-rose-50 hover:text-rose-600 ml-auto"
-                      >
-                        {isActionLoading === res.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        Отменить бронь
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-32 bg-white rounded-[4rem] border border-dashed">
-          <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Package className="w-12 h-12 text-muted-foreground/30" />
-          </div>
-          <h2 className="text-2xl font-bold mb-3">Покупок пока нет</h2>
-          <p className="text-muted-foreground mb-10 max-w-sm mx-auto">Ваш список покупок пуст. Найдите что-нибудь интересное в каталоге kmsX!</p>
-          <Link href="/items">
-            <Button size="lg" className="rounded-2xl h-14 px-10 text-lg font-bold">Перейти к обзору</Button>
-          </Link>
-        </div>
-      )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed">
+              <History className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground font-medium">История покупок пуста</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

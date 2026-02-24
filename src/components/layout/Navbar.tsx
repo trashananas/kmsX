@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare, Package } from 'lucide-react';
+import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
@@ -21,7 +21,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
   { label: 'Категории', href: '/categories', icon: Layers },
-  { label: 'Лайки', href: '/favorites', icon: Heart },
 ];
 
 export default function Navbar() {
@@ -69,6 +68,16 @@ export default function Navbar() {
                 {item.label}
               </Link>
             ))}
+            <Link 
+              href="/favorites"
+              className={cn(
+                "flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary",
+                pathname === '/favorites' ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Heart className="w-4 h-4" />
+              Лайки
+            </Link>
           </div>
         )}
 
@@ -87,7 +96,7 @@ export default function Navbar() {
 
               <div className="flex items-center gap-2">
                 <Link href="/chats">
-                  <Button className="rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20 font-bold gap-2 h-10 px-4">
+                  <Button variant="ghost" className="rounded-xl bg-accent/10 text-accent hover:bg-accent/20 font-bold gap-2 h-10 px-4">
                     <MessageSquare className="w-4 h-4" />
                     <span className="hidden sm:inline">Чаты</span>
                   </Button>
@@ -95,7 +104,7 @@ export default function Navbar() {
 
                 <Link href="/reservations">
                   <Button className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold gap-2 h-10 px-4">
-                    <Package className="w-4 h-4" />
+                    <ShoppingBag className="w-4 h-4" />
                     <span className="hidden sm:inline">Покупки</span>
                   </Button>
                 </Link>
@@ -125,18 +134,23 @@ export default function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/profile" className="cursor-pointer">
-                    Настройки профиля
+                  <Link href="/profile" className="cursor-pointer flex items-center gap-2">
+                    <User className="w-4 h-4" /> Настройки профиля
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/items?owner=me" className="cursor-pointer">
-                    Мои продажи
+                  <Link href="/items?owner=me" className="cursor-pointer flex items-center gap-2">
+                    <Package className="w-4 h-4" /> Мои объявления
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/reservations" className="cursor-pointer">
-                    Мои покупки
+                  <Link href="/reservations" className="cursor-pointer flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4" /> Мои покупки
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link href="/sales" className="cursor-pointer flex items-center gap-2">
+                    <History className="w-4 h-4" /> Мои продажи
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
