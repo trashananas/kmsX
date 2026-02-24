@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -70,7 +71,6 @@ export default function ItemCard({ item }: { item: Item }) {
         title: item.title,
         imageUrl: item.image,
         condition: item.condition,
-        locationName: item.location,
         createdAt: new Date().toISOString()
       }, { merge: true });
     }

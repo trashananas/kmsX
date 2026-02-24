@@ -1,3 +1,4 @@
+
 "use client";
 
 import { use, useState } from 'react';
@@ -134,8 +135,6 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       title: item.title,
       imageUrl: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/600',
       condition: item.condition || '',
-      locationName: item.locationName || '',
-      reservedCount: (item.reservedCount || 0) + reserveCount,
       createdAt: new Date().toISOString()
     }, { merge: true });
 

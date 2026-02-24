@@ -34,7 +34,6 @@ export default function NewItemListing() {
     description: '',
     categoryId: '',
     condition: '',
-    locationName: '',
     price: '',
     bank: '',
     quantity: '1',
@@ -85,7 +84,7 @@ export default function NewItemListing() {
         description: formData.description,
         categoryId: formData.categoryId,
         condition: formData.condition,
-        locationName: formData.locationName,
+        locationName: "Москва",
         price: formData.price ? parseFloat(formData.price) : 0,
         bank: formData.bank || '',
         quantity: formData.quantity ? parseInt(formData.quantity) : 1,
@@ -94,8 +93,8 @@ export default function NewItemListing() {
         imageUrls: [previewImage || `https://picsum.photos/seed/${Math.random()}/600/800`],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        latitude: 0,
-        longitude: 0,
+        latitude: 55.7558,
+        longitude: 37.6173,
       };
 
       addDocumentNonBlocking(listingsRef, newDoc);
@@ -126,7 +125,7 @@ export default function NewItemListing() {
       <div className="bg-white rounded-[2rem] p-8 shadow-sm border">
         <div className="mb-8">
           <h1 className="text-3xl font-headline font-bold mb-2">Новое объявление kmsX</h1>
-          <p className="text-muted-foreground">Опишите вашу вещь для обмена или продажи</p>
+          <p className="text-muted-foreground">Опишите вашу вещь для обмена или продажи (город: Москва)</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -266,21 +265,6 @@ export default function NewItemListing() {
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Место встречи</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-primary w-4 h-4" />
-              <Input 
-                id="location" 
-                placeholder="Город или район" 
-                className="pl-10 h-12 rounded-xl" 
-                required 
-                value={formData.locationName}
-                onChange={(e) => setFormData({...formData, locationName: e.target.value})}
-              />
-            </div>
           </div>
 
           <Button type="submit" className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/20 font-bold" disabled={loading}>

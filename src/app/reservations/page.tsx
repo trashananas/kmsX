@@ -16,7 +16,7 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ReservationsPage() {
-  const { user } = useUser();
+  const { user } = userUser();
   const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
