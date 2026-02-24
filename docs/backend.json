@@ -2,213 +2,58 @@
 {
   "entities": {
     "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user's profile information within the kmsX application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "A unique, user-chosen name for display purposes."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address, used for communication.",
-          "format": "email"
-        },
-        "bio": {
-          "type": "string",
-          "description": "An optional short description or biography provided by the user."
-        },
-        "profilePictureUrl": {
-          "type": "string",
-          "description": "An optional URL pointing to the user's profile picture.",
-          "format": "uri"
-        },
-        "locationName": {
-          "type": "string",
-          "description": "A human-readable name for the user's primary location (e.g., city, neighborhood)."
-        },
-        "latitude": {
-          "type": "number",
-          "description": "The geographic latitude of the user's primary location for proximity searches."
-        },
-        "longitude": {
-          "type": "number",
-          "description": "The geographic longitude of the user's primary location for proximity searches."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the user profile was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating the last time the user profile was updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "bio": { "type": "string" },
+        "profilePictureUrl": { "type": "string", "format": "uri" },
+        "address": { "type": "string", "description": "Улица и дом" },
+        "floor": { "type": "string" },
+        "apartment": { "type": "string" },
+        "intercom": { "type": "string", "description": "Код домофона" },
+        "phone": { "type": "string" },
+        "bank": { "type": "string", "description": "Банк и реквизиты" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "username",
-        "email",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["id", "email", "createdAt", "updatedAt"]
     },
-    "Category": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Category",
+    "Chat": {
+      "title": "Chat",
       "type": "object",
-      "description": "Defines a classification for item listings in kmsX.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Category entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the category."
-        },
-        "description": {
-          "type": "string",
-          "description": "An optional detailed description."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "An optional URL to an image or icon.",
-          "format": "uri"
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "itemTitle": { "type": "string" },
+        "itemImage": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "dealStatus": { "type": "string", "enum": ["pending", "delivered", "completed"] },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     },
-    "ItemListing": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ItemListing",
+    "Message": {
+      "title": "Message",
       "type": "object",
-      "description": "Represents an item that a user has listed for exchange on the kmsX platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ItemListing entity."
-        },
-        "title": {
-          "type": "string",
-          "description": "The main title of the item."
-        },
-        "description": {
-          "type": "string",
-          "description": "Detailed description of the item."
-        },
-        "ownerId": {
-          "type": "string",
-          "description": "Reference to UserProfile ID."
-        },
-        "categoryId": {
-          "type": "string",
-          "description": "Reference to Category ID."
-        },
-        "condition": {
-          "type": "string",
-          "description": "Condition of the item."
-        },
-        "price": {
-          "type": "number",
-          "description": "Optional monetary price. 0 or null means free."
-        },
-        "bank": {
-          "type": "string",
-          "description": "Preferred bank for payment."
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Number of items available."
-        },
-        "imageUrls": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "locationName": {
-          "type": "string"
-        },
-        "latitude": {
-          "type": "number"
-        },
-        "longitude": {
-          "type": "number"
-        },
-        "status": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "description",
-        "ownerId",
-        "categoryId",
-        "imageUrls",
-        "locationName",
-        "status",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Favorite": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Favorite",
-      "type": "object",
-      "description": "A record of an item that a user has favorited in kmsX.",
-      "properties": {
-        "itemId": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "imageUrl": {
-          "type": "string"
-        },
-        "condition": {
-          "type": "string"
-        },
-        "locationName": {
-          "type": "string"
-        },
-        "reservedCount": {
-          "type": "number",
-          "description": "Number of units reserved by the user."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": ["itemId", "title", "imageUrl", "createdAt"]
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "system", "offer", "info"] },
+        "offerPrice": { "type": "number" },
+        "offerStatus": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "infoData": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
@@ -216,68 +61,24 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "User profiles.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "User UID."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
+          "description": "User profiles."
         }
       },
       {
-        "path": "/users/{userId}/favorites/{itemId}",
+        "path": "/chats/{chatId}",
         "definition": {
-          "entityName": "Favorite",
-          "schema": {
-            "$ref": "#/backend/entities/Favorite"
-          },
-          "description": "User favorites.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "User UID."
-            },
-            {
-              "name": "itemId",
-              "description": "Item ID."
-            }
-          ]
+          "entityName": "Chat",
+          "schema": { "$ref": "#/backend/entities/Chat" },
+          "description": "Chat sessions."
         }
       },
       {
-        "path": "/categories/{categoryId}",
+        "path": "/chats/{chatId}/messages/{messageId}",
         "definition": {
-          "entityName": "Category",
-          "schema": {
-            "$ref": "#/backend/entities/Category"
-          },
-          "description": "Global categories.",
-          "params": [
-            {
-              "name": "categoryId",
-              "description": "Category ID."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/item_listings/{itemListingId}",
-        "definition": {
-          "entityName": "ItemListing",
-          "schema": {
-            "$ref": "#/backend/entities/ItemListing"
-          },
-          "description": "Item listings.",
-          "params": [
-            {
-              "name": "itemListingId",
-              "description": "Item ID."
-            }
-          ]
+          "entityName": "Message",
+          "schema": { "$ref": "#/backend/entities/Message" },
+          "description": "Messages within a chat."
         }
       }
     ]

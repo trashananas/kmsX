@@ -28,9 +28,10 @@ import {
   deleteDocumentNonBlocking,
   updateDocumentNonBlocking,
   setDocumentNonBlocking,
+  addDocumentNonBlocking,
   useMemoFirebase
 } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -65,44 +66,65 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
   const { user } = useUser();
   const [reserveCount, setReserveCount] = useState(1);
   const [isReserveOpen, setIsReserveOpen] = useState(false);
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   const itemRef = useMemoFirebase(() => doc(firestore, 'item_listings', id), [firestore, id]);
-  const { data: item, isLoading } = useDoc(itemRef);
+  const { data: item, isLoading } = useDoc(itemRef as any);
 
   const categoryRef = useMemoFirebase(() => 
     item?.categoryId ? doc(firestore, 'categories', item.categoryId) : null
   , [firestore, item?.categoryId]);
-  const { data: category } = useDoc(categoryRef);
+  const { data: category } = useDoc(categoryRef as any);
 
   const availableQuantity = item 
     ? (typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 1) 
     : 0;
 
+  const getOrCreateChat = async () => {
+    if (!user || !item) return;
+    setIsChatLoading(true);
+    try {
+      const chatsRef = collection(firestore, 'chats');
+      const q = query(chatsRef, where('itemId', '==', item.id), where('buyerId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      
+      let chatId;
+      if (snapshot.empty) {
+        const newChat = await addDocumentNonBlocking(chatsRef, {
+          itemId: item.id,
+          itemTitle: item.title,
+          itemImage: item.imageUrls?.[0] || '',
+          buyerId: user.uid,
+          sellerId: item.ownerId,
+          status: 'active',
+          dealStatus: 'pending',
+          lastMessage: '',
+          updatedAt: new Date().toISOString()
+        });
+        chatId = (newChat as any).id;
+      } else {
+        chatId = snapshot.docs[0].id;
+      }
+      router.push(`/chats/${chatId}`);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось открыть чат." });
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   const handleDelete = () => {
     if (!item || !user || item.ownerId !== user.uid) return;
-    
     deleteDocumentNonBlocking(itemRef as any);
-    toast({
-      title: "Объявление удалено",
-      description: "Вещь больше не отображается в поиске kmsX.",
-    });
+    toast({ title: "Объявление удалено" });
     router.push('/items');
   };
 
-  const handleReserve = () => {
-    if (!item || !user || reserveCount <= 0 || reserveCount > availableQuantity) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка бронирования",
-        description: `Вы не можете забронировать более ${availableQuantity} шт.`,
-      });
-      return;
-    }
+  const handleReserve = async () => {
+    if (!item || !user || reserveCount <= 0 || reserveCount > availableQuantity) return;
 
-    const newQuantity = availableQuantity - reserveCount;
-    
     updateDocumentNonBlocking(itemRef as any, {
-      quantity: newQuantity,
+      quantity: availableQuantity - reserveCount,
       updatedAt: new Date().toISOString()
     });
 
@@ -117,45 +139,38 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       createdAt: new Date().toISOString()
     }, { merge: true });
 
-    toast({
-      title: "Забронировано!",
-      description: `Вы забронировали ${reserveCount} шт. Вы можете найти их во вкладке «Лайки».`,
+    // Инициализация чата с системным сообщением
+    const chatsRef = collection(firestore, 'chats');
+    const newChatRef = await addDocumentNonBlocking(chatsRef, {
+      itemId: item.id,
+      itemTitle: item.title,
+      itemImage: item.imageUrls?.[0] || '',
+      buyerId: user.uid,
+      sellerId: item.ownerId,
+      status: 'active',
+      dealStatus: 'pending',
+      lastMessage: `Забронировано: ${reserveCount} шт.`,
+      updatedAt: new Date().toISOString()
     });
+
+    const msgCol = collection(firestore, 'chats', (newChatRef as any).id, 'messages');
+    addDocumentNonBlocking(msgCol, {
+      senderId: 'system',
+      text: `${user.email} хочет приобрести товар: ${item.title} (${reserveCount} шт.)`,
+      type: 'system',
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: "Забронировано!", description: "Чат с продавцом создан." });
     setIsReserveOpen(false);
-    setReserveCount(1);
+    router.push(`/chats/${(newChatRef as any).id}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="container px-4 py-8 max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-8">
-          <Skeleton className="w-full md:w-1/2 aspect-[4/5] rounded-[2rem]" />
-          <div className="flex-1 space-y-6">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-32 w-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!item) {
-    return (
-      <div className="container px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold mb-4">Объявление не найдено</h1>
-        <Link href="/items">
-          <Button variant="outline">Вернуться к списку</Button>
-        </Link>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="container p-8">Загрузка...</div>;
+  if (!item) return <div className="container p-8">Товар не найден</div>;
 
   const isOwner = user && item.ownerId === user.uid;
   const isSoldOut = availableQuantity <= 0;
-  const formattedDate = item.createdAt 
-    ? format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru }) 
-    : 'Недавно';
 
   return (
     <div className="container px-4 py-8 max-w-5xl mx-auto">
@@ -167,22 +182,10 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       <div className={`flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border ${isSoldOut ? 'border-destructive/50' : ''}`}>
         <div className="w-full md:w-1/2">
           <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
-            <Image 
-              src={item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} 
-              alt={item.title} 
-              fill 
-              className={`object-cover ${isSoldOut ? 'grayscale' : ''}`}
-              priority
-            />
+            <Image src={item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} alt={item.title} fill className="object-cover" priority />
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              <Badge className="bg-white/90 text-primary hover:bg-white border-none px-4 py-1.5 shadow-sm text-sm font-bold backdrop-blur-md">
-                {item.condition}
-              </Badge>
-              {isSoldOut && (
-                <Badge variant="destructive" className="px-4 py-1.5 shadow-sm text-sm font-bold uppercase tracking-wider animate-pulse">
-                  Кончился
-                </Badge>
-              )}
+              <Badge className="bg-white/90 text-primary border-none px-4 py-1.5 shadow-sm font-bold backdrop-blur-md">{item.condition}</Badge>
+              {isSoldOut && <Badge variant="destructive" className="px-4 py-1.5 shadow-sm font-bold uppercase animate-pulse">Кончился</Badge>}
             </div>
           </div>
         </div>
@@ -190,159 +193,71 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-4">
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1">
-                {category?.name || 'Разное'}
-              </Badge>
-              {!isSoldOut && (
-                <Badge className="bg-emerald-100 text-emerald-600 border-none px-3 py-1">
-                  Свободно
-                </Badge>
-              )}
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1">{category?.name || 'Разное'}</Badge>
             </div>
-            <h1 className={`text-4xl font-headline font-bold mb-2 leading-tight ${isSoldOut ? 'text-muted-foreground line-through' : ''}`}>
-              {item.title}
-            </h1>
-            
+            <h1 className="text-4xl font-headline font-bold mb-2 leading-tight">{item.title}</h1>
             <div className="flex items-center gap-4 mb-6">
-              <span className={`text-3xl font-bold ${isSoldOut ? 'text-muted-foreground' : 'text-primary'}`}>
-                {item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}
-              </span>
-              <Badge variant="outline" className={`rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground ${isSoldOut ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}`}>
-                <Package className="w-3.5 h-3.5" />
-                {isSoldOut ? 'Нет в наличии' : `В наличии: ${availableQuantity} шт.`}
+              <span className="text-3xl font-bold text-primary">{item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}</span>
+              <Badge variant="outline" className="rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground">
+                <Package className="w-3.5 h-3.5" /> В наличии: {availableQuantity} шт.
               </Badge>
             </div>
-
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-8">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-primary" />
-                {item.locationName}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-primary" />
-                Добавлено {formattedDate}
-              </div>
+              <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-primary" />{item.locationName}</div>
+              <div className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-primary" />{item.createdAt && format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru })}</div>
             </div>
           </div>
 
-          <div className="space-y-6 flex-1">
-            <div className="p-6 bg-muted/30 rounded-2xl border border-dashed">
-              <h3 className="font-bold mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-primary" />
-                Описание
-              </h3>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {item.description}
-              </p>
-              
-              {item.bank && (
-                <div className="mt-6 pt-6 border-t border-dashed flex items-center gap-3">
-                  <Wallet className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Банк для оплаты</p>
-                    <p className="font-bold">{item.bank}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-4 p-4 border rounded-2xl bg-white shadow-sm">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                <User className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Владелец kmsX</p>
-                <p className="text-xs text-muted-foreground">На связи для обмена</p>
-              </div>
-              <div className="ml-auto">
-                <ShieldCheck className="w-5 h-5 text-emerald-500" />
-              </div>
-            </div>
+          <div className="p-6 bg-muted/30 rounded-2xl border border-dashed mb-10">
+            <h3 className="font-bold mb-3 flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Описание</h3>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{item.description}</p>
           </div>
 
-          <div className="mt-10 flex gap-4">
+          <div className="mt-auto flex gap-4">
             {isOwner ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    className="flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg shadow-destructive/20"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                    Удалить вещь
-                  </Button>
+                  <Button variant="destructive" className="flex-1 h-14 rounded-xl text-lg font-bold shadow-lg shadow-destructive/20">Удалить</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-[2rem]">
                   <AlertDialogHeader>
-                    <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
-                      <AlertTriangle className="w-6 h-6" />
-                    </div>
-                    <AlertDialogTitle className="text-xl">Вы уверены?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-muted-foreground">
-                      Это действие нельзя будет отменить. Ваше объявление «{item.title}» будет удалено из kmsX навсегда.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
+                    <AlertDialogDescription>Это действие необратимо.</AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter className="gap-2 sm:gap-0">
-                    <AlertDialogCancel className="rounded-xl h-12 border-2">Отмена</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleDelete}
-                      className="rounded-xl h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"
-                    >
-                      Да, удалить
-                    </AlertDialogAction>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Отмена</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive">Удалить</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             ) : (
               <Dialog open={isReserveOpen} onOpenChange={setIsReserveOpen}>
                 <DialogTrigger asChild>
-                  <Button 
-                    className={`flex-1 h-14 rounded-xl text-lg font-bold gap-2 shadow-lg ${isSoldOut ? 'bg-muted text-muted-foreground' : 'shadow-primary/20'}`}
-                    disabled={isSoldOut}
-                  >
-                    {isSoldOut ? (
-                      'Уже закончилось'
-                    ) : (
-                      <>
-                        <CalendarCheck className="w-5 h-5" />
-                        Забронировать
-                      </>
-                    )}
+                  <Button className="flex-1 h-14 rounded-xl text-lg font-bold shadow-lg shadow-primary/20" disabled={isSoldOut}>
+                    {isSoldOut ? 'Закончился' : 'Забронировать'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="rounded-[2rem]">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl">Бронирование</DialogTitle>
-                    <DialogDescription>
-                      Сколько единиц товара «{item.title}» вы хотите забронировать? (В наличии: {availableQuantity})
-                    </DialogDescription>
-                  </DialogHeader>
+                  <DialogHeader><DialogTitle>Бронирование</DialogTitle></DialogHeader>
                   <div className="py-6">
-                    <Label htmlFor="reserve-count">Количество (макс. {availableQuantity})</Label>
-                    <Input 
-                      id="reserve-count"
-                      type="number"
-                      min="1"
-                      max={availableQuantity}
-                      value={reserveCount}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (!isNaN(val)) setReserveCount(val);
-                      }}
-                      className="h-12 rounded-xl mt-2"
-                    />
+                    <Label>Количество</Label>
+                    <Input type="number" min="1" max={availableQuantity} value={reserveCount} onChange={(e) => setReserveCount(parseInt(e.target.value))} className="h-12 rounded-xl mt-2" />
                   </div>
-                  <DialogFooter>
-                    <Button onClick={handleReserve} className="w-full h-14 rounded-xl text-lg font-bold">
-                      Подтвердить бронь
-                    </Button>
-                  </DialogFooter>
+                  <DialogFooter><Button onClick={handleReserve} className="w-full h-14 rounded-xl font-bold">Подтвердить и начать чат</Button></DialogFooter>
                 </DialogContent>
               </Dialog>
             )}
-            <Button variant="outline" size="icon" className="h-14 w-14 rounded-xl border-2">
-              <MessageCircle className="w-6 h-6" />
-            </Button>
+            {!isOwner && (
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-14 w-14 rounded-xl border-2"
+                onClick={getOrCreateChat}
+                disabled={isChatLoading}
+              >
+                <MessageCircle className={`w-6 h-6 ${isChatLoading ? 'animate-pulse' : ''}`} />
+              </Button>
+            )}
           </div>
         </div>
       </div>

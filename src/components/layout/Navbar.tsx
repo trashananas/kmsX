@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, Layers, User, LogOut, Heart } from 'lucide-react';
+import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
@@ -22,6 +22,7 @@ const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
   { label: 'Категории', href: '/categories', icon: Layers },
   { label: 'Лайки', href: '/favorites', icon: Heart },
+  { label: 'Чаты', href: '/chats', icon: MessageSquare },
 ];
 
 export default function Navbar() {
@@ -106,6 +107,11 @@ export default function Navbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link href="/profile" className="cursor-pointer">
+                    Настройки профиля
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
                   <Link href="/items?owner=me" className="cursor-pointer">
                     Мои объявления
