@@ -26,7 +26,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/50 to-background pointer-events-none" />
         
         <div className="container px-4 text-center z-10 py-20">
-          <div className="relative w-32 h-32 mx-auto mb-10 shadow-2xl rounded-[2.5rem] overflow-hidden rotate-3 border-4 border-white bg-white">
+          <div className="relative w-48 h-48 md:w-64 md:h-64 mx-auto mb-12 shadow-2xl rounded-[3rem] md:rounded-[4rem] overflow-hidden rotate-3 border-4 md:border-8 border-white bg-white">
             <Image 
               src={logoUrl} 
               alt="Клуб логотип" 
