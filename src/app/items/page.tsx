@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, PackageOpen, RefreshCw } from 'lucide-react';
+import { Search, PackageOpen, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -157,11 +157,6 @@ export default function BrowseItems() {
               onCheckedChange={setShowOnlyFree}
             />
             <Label htmlFor="free-mode" className="text-sm font-medium whitespace-nowrap cursor-pointer">Бесплатно</Label>
-          </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl">
-              <Filter className="w-4 h-4" />
-            </Button>
           </div>
         </div>
 
