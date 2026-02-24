@@ -105,7 +105,7 @@ export default function BrowseItems() {
           quantity: 1,
           ownerId: user.uid,
           status: 'available',
-          imageUrls: [`https://picsum.photos/seed/${Math.random()}/600/800`],
+          imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/800`],
           locationName: "Москва",
           latitude: 55.7558,
           longitude: 37.6173,
@@ -207,7 +207,7 @@ export default function BrowseItems() {
                     category: categories?.find(c => c.id === item.categoryId)?.name || 'Разное',
                     location: item.locationName || 'Не указано',
                     distance: item.price > 0 ? `${item.price} ₽` : 'Бесплатно',
-                    image: item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/600',
+                    image: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/600',
                     condition: item.condition
                   }} />
                 ))}

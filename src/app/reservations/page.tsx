@@ -38,7 +38,6 @@ export default function ReservationsPage() {
     try {
       // 1. Возвращаем количество товару
       const itemRef = doc(firestore, 'item_listings', res.itemId);
-      // Нужно получить текущее количество товара, чтобы прибавить
       const snapshot = await getDocs(query(collection(firestore, 'item_listings'), where('__name__', '==', res.itemId)));
       if (!snapshot.empty) {
         const itemData = snapshot.docs[0].data();
@@ -61,18 +60,11 @@ export default function ReservationsPage() {
       const chatSnap = await getDocs(query(chatsRef, where('itemId', '==', res.itemId), where('buyerId', '==', user.uid)));
       if (!chatSnap.empty) {
         const chatDoc = chatSnap.docs[0];
-        const msgCol = collection(firestore, 'chats', chatDoc.id, 'messages');
+        const messagesRef = collection(firestore, 'chats', chatDoc.id, 'messages');
         updateDocumentNonBlocking(doc(firestore, 'chats', chatDoc.id), {
           lastMessage: 'Бронирование отменено покупателем',
           updatedAt: new Date().toISOString()
         });
-        // Добавляем системное сообщение
-        // Примечание: addDocumentNonBlocking используется для новых сообщений
-        const messagesRef = collection(firestore, 'chats', chatDoc.id, 'messages');
-        const { addDoc } = await import('firebase/firestore');
-        const { getFirestore } = await import('firebase/firestore');
-        // Используем упрощенный подход через имеющийся хелпер
-        const { addDocumentNonBlocking } = await import('@/firebase');
         addDocumentNonBlocking(messagesRef, {
           senderId: 'system',
           text: `Покупатель отменил бронирование товара (${res.reservedCount} шт.)`,
@@ -138,7 +130,7 @@ export default function ReservationsPage() {
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative w-full sm:w-48 h-48 shrink-0">
                     <Image 
-                      src={res.imageUrl || 'https://picsum.photos/seed/placeholder/400/400'} 
+                      src={res.imageUrl || 'https://picsum.photos/seed/1/400/400'} 
                       alt={res.title} 
                       fill 
                       className="object-cover"

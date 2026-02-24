@@ -2,6 +2,7 @@
 "use client";
 
 import { use, useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -153,7 +154,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
           </Button>
         </Link>
         <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm border">
-          <img src={chat.itemImage} alt="" className="w-full h-full object-cover" />
+          <Image 
+            src={chat.itemImage || 'https://picsum.photos/seed/1/200/200'} 
+            alt="" 
+            fill 
+            className="object-cover" 
+          />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-bold truncate leading-tight">{chat.itemTitle}</h2>

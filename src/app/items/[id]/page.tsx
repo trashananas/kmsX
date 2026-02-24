@@ -93,7 +93,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
         const newChat = await addDocumentNonBlocking(chatsRef, {
           itemId: item.id,
           itemTitle: item.title,
-          itemImage: item.imageUrls?.[0] || '',
+          itemImage: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/200/200',
           buyerId: user.uid,
           sellerId: item.ownerId,
           status: 'active',
@@ -132,7 +132,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
     setDocumentNonBlocking(favRef, {
       itemId: item.id,
       title: item.title,
-      imageUrl: item.imageUrls?.[0] || '',
+      imageUrl: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/600',
       condition: item.condition || '',
       locationName: item.locationName || '',
       reservedCount: (item.reservedCount || 0) + reserveCount,
@@ -144,7 +144,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
     const newChatRef = await addDocumentNonBlocking(chatsRef, {
       itemId: item.id,
       itemTitle: item.title,
-      itemImage: item.imageUrls?.[0] || '',
+      itemImage: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/200/200',
       buyerId: user.uid,
       sellerId: item.ownerId,
       status: 'active',
@@ -182,7 +182,14 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       <div className={`flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border ${isSoldOut ? 'border-destructive/50' : ''}`}>
         <div className="w-full md:w-1/2">
           <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
-            <Image src={item.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} alt={item.title} fill className="object-cover" priority />
+            <Image 
+              src={item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/800'} 
+              alt={item.title} 
+              fill 
+              className="object-cover" 
+              priority 
+              data-ai-hint="item image"
+            />
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               <Badge className="bg-white/90 text-primary border-none px-4 py-1.5 shadow-sm font-bold backdrop-blur-md">{item.condition}</Badge>
               {isSoldOut && <Badge variant="destructive" className="px-4 py-1.5 shadow-sm font-bold uppercase animate-pulse">Кончился</Badge>}
