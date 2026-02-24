@@ -18,7 +18,7 @@ import {
   MapPin, 
   Wallet, 
   Phone, 
-  CheckCircle2,
+  CheckCircle2, 
   AlertCircle,
   Banknote,
   Info
@@ -308,37 +308,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
       </div>
 
       {/* Input area */}
-      <div className="p-4 bg-white border-t shrink-0 flex flex-col gap-3">
-        {isBuyer && chat.dealStatus === 'pending' && (
-          <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full h-10 rounded-xl border-dashed border-primary/40 text-primary gap-2 font-bold">
-                <Banknote className="w-4 h-4" />
-                Предложить свою цену
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-[2rem]">
-              <DialogHeader>
-                <DialogTitle>Ваше предложение</DialogTitle>
-                <DialogDescription>Продавец увидит вашу цену в чате и сможет согласиться или отказать.</DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <Label>Новая цена (₽)</Label>
-                <Input 
-                  type="number" 
-                  value={offerPrice} 
-                  onChange={e => setOfferPrice(e.target.value)}
-                  className="h-12 rounded-xl mt-2"
-                  placeholder="Введите сумму"
-                />
-              </div>
-              <DialogFooter>
-                <Button onClick={handleOfferPrice} className="w-full h-12 rounded-xl">Отправить предложение</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
+      <div className="p-4 bg-white border-t shrink-0">
         <div className="flex items-center gap-2">
           <Input 
             value={messageText}
@@ -347,9 +317,39 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
             placeholder="Напишите сообщение..." 
             className="flex-1 h-12 rounded-2xl bg-muted/30 border-none px-6"
           />
+          
+          {isBuyer && chat.dealStatus === 'pending' && (
+            <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-2 border-primary/10 text-primary shrink-0 hover:bg-primary/5">
+                  <Banknote className="w-6 h-6" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2rem]">
+                <DialogHeader>
+                  <DialogTitle>Ваше предложение</DialogTitle>
+                  <DialogDescription>Продавец увидит вашу цену в чате и сможет согласиться или отказать.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <Label>Новая цена (₽)</Label>
+                  <Input 
+                    type="number" 
+                    value={offerPrice} 
+                    onChange={e => setOfferPrice(e.target.value)}
+                    className="h-12 rounded-xl mt-2"
+                    placeholder="Введите сумму"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleOfferPrice} className="w-full h-12 rounded-xl">Отправить предложение</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
           <Button 
             onClick={() => sendMessage(messageText)}
-            className="h-12 w-12 rounded-2xl p-0"
+            className="h-12 w-12 rounded-2xl p-0 shrink-0 shadow-lg shadow-primary/20"
           >
             <Send className="w-5 h-5" />
           </Button>
