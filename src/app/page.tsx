@@ -13,14 +13,17 @@ export default function Home() {
   const logoImg = PlaceHolderImages.find(img => img.id === 'logo');
 
   return (
-    <div className="flex flex-col gap-16 pb-20">
+    <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[85vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-primary/5 to-transparent">
-        <div className="container px-4 text-center z-10">
-          <div className="relative w-32 h-32 mx-auto mb-10 shadow-2xl rounded-[2.5rem] overflow-hidden rotate-3 border-4 border-white">
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Мягкий фоновый градиент без резких границ */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/50 to-background pointer-events-none" />
+        
+        <div className="container px-4 text-center z-10 py-20">
+          <div className="relative w-32 h-32 mx-auto mb-10 shadow-2xl rounded-[2.5rem] overflow-hidden rotate-3 border-4 border-white bg-white">
             <Image 
-              src={logoImg?.imageUrl || '/logo.png'} 
-              alt="Клуб многодетных семей" 
+              src={logoImg?.imageUrl || 'https://picsum.photos/seed/kms-logo/400/400'} 
+              alt="Клуб логотип" 
               fill 
               className="object-cover"
               data-ai-hint="family logo"
@@ -51,13 +54,13 @@ export default function Home() {
           </div>
         </div>
         
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </section>
 
       {/* CTA Section */}
       {!user && (
-        <section className="container px-4 py-10">
+        <section className="container px-4 py-20">
           <div className="bg-primary rounded-[5rem] p-16 text-center text-primary-foreground relative overflow-hidden shadow-2xl">
             <div className="relative z-10">
               <h2 className="text-4xl md:text-5xl font-headline font-black mb-8 uppercase tracking-tighter">Присоединяйтесь к нашему клубу</h2>
