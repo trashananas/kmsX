@@ -3,15 +3,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // kmsX Security Rules
-    // ОБЕСПЕЧЕНИЕ ПОЛНОГО ДОСТУПА ДЛЯ РЕЖИМА X-TOK И КАТАЛОГА
-    // Последнее обновление: 2024-05-24 20:30:00
+    // ОБЕСПЕЧЕНИЕ ПОЛНОГО И НЕОГРАНИЧЕННОГО ДОСТУПА ДЛЯ ВСЕХ ФУНКЦИЙ (X-TOK, КАТАЛОГ, ЧАТЫ)
+    // Это гарантирует отсутствие ошибок "Missing or insufficient permissions" при любых операциях.
 
-    // Недвусмысленный доступ к объявлениям для просмотра и редактирования (X-Tok)
+    // 1. Объявления о вещах (Основной контент и X-Tok лента)
+    // Разрешаем чтение (get/list) и запись (create/update/delete) всем без исключения.
     match /item_listings/{itemId} {
       allow read, write: if true;
     }
 
-    // Доступ к чатам и сообщениям для совершения сделок
+    // 2. Чаты и сообщения (Процесс сделки)
+    // Полный доступ для беспрепятственного общения и изменения статусов сделок.
     match /chats/{chatId} {
       allow read, write: if true;
       match /messages/{messageId} {
@@ -19,12 +21,7 @@ service cloud.firestore {
       }
     }
 
-    // Доступ к категориям
-    match /categories/{catId} {
-      allow read, write: if true;
-    }
-
-    // Доступ к профилям пользователей и их бронированиям/избранному
+    // 3. Профили пользователей и их избранное/брони (Настройки и корзина)
     match /users/{userId} {
       allow read, write: if true;
       match /favorites/{favoriteId} {
@@ -32,7 +29,13 @@ service cloud.firestore {
       }
     }
 
-    // Резервный доступ для всех остальных данных в режиме разработки
+    // 4. Категории товаров
+    match /categories/{catId} {
+      allow read, write: if true;
+    }
+
+    // 5. Глобальный доступ (fallback)
+    // Резервное правило, разрешающее любые операции с любыми документами.
     match /{document=**} {
       allow read, write: if true;
     }
