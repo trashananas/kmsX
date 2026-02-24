@@ -45,19 +45,6 @@ export default function SalesHistoryPage() {
         </div>
       ) : sales && sales.length > 0 ? (
         <div className="grid gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <Card className="rounded-[2rem] border-none shadow-sm bg-primary text-white p-8">
-              <p className="text-xs uppercase font-bold opacity-70 mb-2 tracking-widest">Всего сделок</p>
-              <h2 className="text-4xl font-black">{sales.length}</h2>
-            </Card>
-            <Card className="rounded-[2rem] border-none shadow-sm bg-white p-8">
-              <p className="text-xs uppercase font-bold text-muted-foreground mb-2 tracking-widest">Продано вещей</p>
-              <h2 className="text-4xl font-black text-primary">
-                {sales.reduce((acc, s) => acc + (s.quantity || 1), 0)}
-              </h2>
-            </Card>
-          </div>
-
           <div className="space-y-4">
             {sales.map((sale) => (
               <Card key={sale.id} className="rounded-[2.5rem] border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
