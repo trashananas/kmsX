@@ -20,7 +20,7 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "email", "createdAt", "updatedAt"]
+      "required": ["id", "email"]
     },
     "Chat": {
       "title": "Chat",
@@ -63,7 +63,7 @@
         "definition": {
           "entityName": "UserProfile",
           "schema": { "$ref": "#/backend/entities/UserProfile" },
-          "description": "User profiles."
+          "description": "User profiles and contact info."
         }
       },
       {
@@ -71,7 +71,7 @@
         "definition": {
           "entityName": "Chat",
           "schema": { "$ref": "#/backend/entities/Chat" },
-          "description": "Chat sessions."
+          "description": "Chat sessions for deals."
         }
       },
       {
@@ -80,6 +80,20 @@
           "entityName": "Message",
           "schema": { "$ref": "#/backend/entities/Message" },
           "description": "Messages within a chat."
+        }
+      },
+      {
+        "path": "/item_listings/{itemId}",
+        "definition": {
+          "schema": { "type": "object" },
+          "description": "Available items for exchange or sale."
+        }
+      },
+      {
+        "path": "/categories/{catId}",
+        "definition": {
+          "schema": { "type": "object" },
+          "description": "Item categories."
         }
       }
     ]
