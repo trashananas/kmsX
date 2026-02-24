@@ -135,6 +135,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
   const confirmReceipt = () => {
     if (!chat) return;
     const finalPrice = chat.price || 0;
+    // Если товар платный (цена > 0), переходим в статус 'received' (ожидание оплаты)
+    // Если бесплатный, сразу 'completed' и в архив
     const nextStatus = finalPrice > 0 ? 'received' : 'completed';
     const archiveStatus = nextStatus === 'completed' ? 'archived' : 'active';
     
@@ -209,10 +211,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
                 Прислать мои контакты
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem className="rounded-xl p-3 gap-2 text-muted-foreground">
-               <AlertCircle className="w-4 h-4" />
-               Пожаловаться
-            </DropdownMenuItem>
+            <div className="px-3 py-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Действия</div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
