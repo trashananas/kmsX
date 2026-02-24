@@ -6,20 +6,28 @@ import { collection, query, where, doc, getDocs } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, MessageSquare, ExternalLink, Trash2, ShoppingCart, RefreshCw, CheckCircle2, History } from 'lucide-react';
+import { Package, MessageSquare, ExternalLink, Trash2, ShoppingCart, RefreshCw, CheckCircle2, History as HistoryIcon } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ReservationsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') || 'active';
+  
+  const [activeTab, setActiveTab] = useState(tabParam);
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveTab(tabParam);
+  }, [tabParam]);
 
   // Активные брони из favorites
   const favoritesQuery = useMemoFirebase(() => {
@@ -101,7 +109,7 @@ export default function ReservationsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="active" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-14 bg-muted/50 p-1 rounded-2xl mb-8">
           <TabsTrigger value="active" className="rounded-xl font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Активные ({reservations.length})</TabsTrigger>
           <TabsTrigger value="history" className="rounded-xl font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">История ({purchaseHistory?.length || 0})</TabsTrigger>
@@ -209,7 +217,7 @@ export default function ReservationsPage() {
             </div>
           ) : (
             <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-muted-foreground/20">
-              <History className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+              <HistoryIcon className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
               <p className="text-muted-foreground font-medium">История покупок пуста</p>
             </div>
           )}
