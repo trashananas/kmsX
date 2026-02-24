@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   useUser, 
@@ -13,12 +13,11 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Users, Image as ImageIcon, ShieldAlert, Globe, RefreshCw, Trash2 } from 'lucide-react';
+import { Users, ShieldAlert, Globe, RefreshCw, Trash2, UploadCloud, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const SUPER_ADMIN_EMAIL = "kjbdnlf@gmail.com";
@@ -27,8 +26,9 @@ export default function AdminPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [logoUrl, setLogoUrl] = useState('');
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isSavingBranding, setIsSavingBranding] = useState(false);
 
   // Права доступа
@@ -47,21 +47,32 @@ export default function AdminPage() {
   const { data: allUsers, isLoading: loadingUsers } = useCollection(usersQuery);
 
   useEffect(() => {
-    if (branding) {
-      setLogoUrl(branding.logoUrl || '');
+    if (branding?.logoUrl) {
+      setLogoPreview(branding.logoUrl);
     }
   }, [branding]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveBranding = () => {
-    if (!brandingRef) return;
+    if (!brandingRef || !logoPreview) return;
     setIsSavingBranding(true);
     try {
       setDocumentNonBlocking(brandingRef as any, {
-        logoUrl: logoUrl.trim(),
+        logoUrl: logoPreview,
         updatedAt: new Date().toISOString(),
         updatedBy: user?.uid
       }, { merge: true });
-      toast({ title: "Брендинг обновлен", description: "Логотип и иконка изменены для всех пользователей." });
+      toast({ title: "Брендинг обновлен", description: "Логотип и иконка изменены во всем приложении." });
     } catch (e) {
       toast({ variant: "destructive", title: "Ошибка", description: "Не удалось сохранить настройки." });
     } finally {
@@ -91,38 +102,57 @@ export default function AdminPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Брендинг и Настройки */}
-        <Card className="lg:col-span-1 rounded-[2.5rem] border-none shadow-xl overflow-hidden">
+        <Card className="lg:col-span-1 rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white">
           <CardHeader className="bg-muted/50 p-8">
             <CardTitle className="flex items-center gap-3">
               <Globe className="w-5 h-5 text-primary" />
-              Внешний вид
+              Брендинг
             </CardTitle>
-            <CardDescription>Управление логотипом и иконкой приложения</CardDescription>
+            <CardDescription>Загрузите новый логотип из проводника</CardDescription>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
-            <div className="space-y-3">
-              <Label>URL Логотипа</Label>
-              <div className="flex flex-col gap-4">
-                <Input 
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="h-12 rounded-xl"
-                />
-                {logoUrl && (
-                  <div className="relative w-24 h-24 rounded-2xl border-2 border-dashed border-muted overflow-hidden bg-muted/20 flex items-center justify-center">
-                    <img src={logoUrl} alt="Preview" className="object-cover w-full h-full" />
+            <div className="space-y-4">
+              <Label className="font-bold uppercase text-[10px] tracking-widest text-muted-foreground">Логотип приложения</Label>
+              
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+              />
+
+              <div className="flex flex-col items-center gap-6">
+                {logoPreview ? (
+                  <div className="relative w-40 h-40 rounded-[2.5rem] border-4 border-white shadow-2xl overflow-hidden group">
+                    <img src={logoPreview} alt="Logo Preview" className="object-cover w-full h-full" />
+                    <button 
+                      onClick={() => setLogoPreview(null)}
+                      className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-40 h-40 border-4 border-dashed border-muted rounded-[2.5rem] flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-all cursor-pointer bg-muted/20"
+                  >
+                    <UploadCloud className="w-10 h-10" />
+                    <span className="text-xs font-bold uppercase tracking-tighter">Выбрать файл</span>
                   </div>
                 )}
+                
+                <p className="text-[10px] text-center text-muted-foreground uppercase font-bold leading-relaxed px-4">
+                  Это изображение обновит логотип в меню, на главной и иконку вкладки для всех.
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold mt-2">
-                Это изображение будет на главной, в меню и во вкладке браузера.
-              </p>
             </div>
+
             <Button 
               onClick={handleSaveBranding} 
-              className="w-full h-14 rounded-2xl bg-primary font-bold uppercase tracking-tight"
-              disabled={isSavingBranding}
+              className="w-full h-14 rounded-2xl bg-primary font-bold uppercase tracking-tight shadow-lg shadow-primary/20"
+              disabled={isSavingBranding || !logoPreview}
             >
               {isSavingBranding ? "Сохранение..." : "Применить везде"}
             </Button>
@@ -130,7 +160,7 @@ export default function AdminPage() {
         </Card>
 
         {/* Список пользователей */}
-        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl overflow-hidden">
+        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white">
           <CardHeader className="bg-muted/50 p-8">
             <CardTitle className="flex items-center gap-3">
               <Users className="w-5 h-5 text-primary" />
