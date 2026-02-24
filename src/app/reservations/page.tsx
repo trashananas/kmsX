@@ -109,9 +109,9 @@ export default function ReservationsPage() {
         <div>
           <h1 className="text-4xl font-headline font-bold mb-2 flex items-center gap-3">
             <ShoppingCart className="w-8 h-8 text-primary" />
-            Мои брони
+            Мои покупки
           </h1>
-          <p className="text-muted-foreground">Вещи, которые вы зарезервировали для покупки</p>
+          <p className="text-muted-foreground">Вещи, которые вы зарезервировали или купили</p>
         </div>
         <Link href="/items">
           <Button variant="outline" className="rounded-xl">В каталог</Button>
@@ -186,8 +186,8 @@ export default function ReservationsPage() {
           <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
             <Package className="w-12 h-12 text-muted-foreground/30" />
           </div>
-          <h2 className="text-2xl font-bold mb-3">Броней пока нет</h2>
-          <p className="text-muted-foreground mb-10 max-w-sm mx-auto">Ваша корзина пуста. Найдите что-нибудь интересное в каталоге kmsX!</p>
+          <h2 className="text-2xl font-bold mb-3">Покупок пока нет</h2>
+          <p className="text-muted-foreground mb-10 max-w-sm mx-auto">Ваш список покупок пуст. Найдите что-нибудь интересное в каталоге kmsX!</p>
           <Link href="/items">
             <Button size="lg" className="rounded-2xl h-14 px-10 text-lg font-bold">Перейти к обзору</Button>
           </Link>

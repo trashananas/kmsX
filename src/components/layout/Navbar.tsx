@@ -96,7 +96,7 @@ export default function Navbar() {
                 <Link href="/reservations">
                   <Button className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold gap-2 h-10 px-4">
                     <Package className="w-4 h-4" />
-                    <span className="hidden sm:inline">Брони</span>
+                    <span className="hidden sm:inline">Покупки</span>
                   </Button>
                 </Link>
               </div>
@@ -131,17 +131,12 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
                   <Link href="/items?owner=me" className="cursor-pointer">
-                    Мои объявления
+                    Мои продажи
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
                   <Link href="/reservations" className="cursor-pointer">
-                    Мои бронирования
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/favorites" className="cursor-pointer">
-                    Избранное
+                    Мои покупки
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
