@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // РЕЖИМ ПОЛНОЙ ЛОЯЛЬНОСТИ ДЛЯ РАЗРАБОТКИ
     // Позволяем всё всем пользователям, чтобы не блокировать функционал чатов и сделок
-    // Последнее обновление: 2024-05-24 16:30:00 (Force Redeploy)
+    // Последнее обновление: 2024-05-24 17:30:00 (Force Redeploy)
     match /{document=**} {
       allow read, write: if true;
     }

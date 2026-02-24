@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,10 +52,12 @@ export default function ProfileSettingsPage() {
 
   const handleSave = () => {
     if (!userRef) return;
-    updateDocumentNonBlocking(userRef as any, {
+    // Используем setDocumentNonBlocking с merge: true вместо update, 
+    // чтобы создать документ, если он еще не существует
+    setDocumentNonBlocking(userRef as any, {
       ...formData,
       updatedAt: new Date().toISOString()
-    });
+    }, { merge: true });
     toast({ title: "Профиль обновлен", description: "Ваши данные для чатов успешно сохранены." });
   };
 
