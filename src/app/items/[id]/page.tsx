@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useState } from 'react';
@@ -75,6 +74,11 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
     item?.categoryId ? doc(firestore, 'categories', item.categoryId) : null
   , [firestore, item?.categoryId]);
   const { data: category } = useDoc(categoryRef as any);
+
+  const ownerRef = useMemoFirebase(() => 
+    item?.ownerId ? doc(firestore, 'users', item.ownerId) : null
+  , [firestore, item?.ownerId]);
+  const { data: ownerProfile } = useDoc(ownerRef as any);
 
   const availableQuantity = item 
     ? (typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 1) 
@@ -211,9 +215,20 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
                 <Package className="w-3.5 h-3.5" /> В наличии: {availableQuantity} шт.
               </Badge>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-8">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
               <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-primary" />{item.locationName}</div>
               <div className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-primary" />{item.createdAt && format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru })}</div>
+            </div>
+
+            {/* Информация о продавце */}
+            <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
+              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-sm">
+                <User className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-0.5">Продавец kmsX</p>
+                <p className="font-bold text-lg text-primary leading-none">{ownerProfile?.username || 'Анонимный участник'}</p>
+              </div>
             </div>
           </div>
 
