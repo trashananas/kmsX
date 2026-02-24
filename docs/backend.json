@@ -30,10 +30,11 @@
         "itemId": { "type": "string" },
         "itemTitle": { "type": "string" },
         "itemImage": { "type": "string" },
+        "price": { "type": "number" },
         "buyerId": { "type": "string" },
         "sellerId": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "archived"] },
-        "dealStatus": { "type": "string", "enum": ["pending", "delivered", "completed"] },
+        "dealStatus": { "type": "string", "enum": ["pending", "delivered", "received", "completed"] },
         "lastMessage": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       }

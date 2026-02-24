@@ -21,7 +21,8 @@ import {
   CheckCircle2, 
   AlertCircle,
   Banknote,
-  Info
+  Info,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -99,6 +100,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
   const handleAcceptOffer = (msg: any) => {
     const msgRef = doc(firestore, 'chats', chatId, 'messages', msg.id);
     updateDocumentNonBlocking(msgRef, { offerStatus: 'accepted' });
+    updateDocumentNonBlocking(chatRef as any, { price: msg.offerPrice });
     sendMessage(`Продавец принял предложение цены: ${msg.offerPrice} ₽`, 'system');
   };
 
@@ -126,17 +128,37 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
 
   const markAsDelivered = () => {
     updateDocumentNonBlocking(chatRef as any, { dealStatus: 'delivered', updatedAt: new Date().toISOString() });
-    sendMessage('Продавец отметил товар как переданный. Покупатель, пожалуйста, подтвердите получение.', 'system');
+    sendMessage('Продавец передал вещь. Покупатель, пожалуйста, подтвердите получение.', 'system');
   };
 
   const confirmReceipt = () => {
+    if (!chat) return;
+    const finalPrice = chat.price || 0;
+    const nextStatus = finalPrice > 0 ? 'received' : 'completed';
+    const archiveStatus = nextStatus === 'completed' ? 'archived' : 'active';
+    
+    updateDocumentNonBlocking(chatRef as any, { 
+      dealStatus: nextStatus, 
+      status: archiveStatus,
+      updatedAt: new Date().toISOString() 
+    });
+    
+    if (nextStatus === 'completed') {
+      sendMessage('Сделка завершена! Товар получен покупателем.', 'system');
+      toast({ title: "Сделка завершена!", description: "Товар перенесен в ваши покупки." });
+    } else {
+      sendMessage('Покупатель подтвердил получение. Продавец, подтвердите получение оплаты.', 'system');
+    }
+  };
+
+  const confirmPayment = () => {
     updateDocumentNonBlocking(chatRef as any, { 
       dealStatus: 'completed', 
       status: 'archived', 
       updatedAt: new Date().toISOString() 
     });
-    sendMessage('Сделка завершена! Товар получен покупателем.', 'system');
-    toast({ title: "Сделка завершена!", description: "Товар перенесен в ваши покупки." });
+    sendMessage('Оплата получена. Сделка официально завершена!', 'system');
+    toast({ title: "Оплата подтверждена", description: "Сделка завершена и архивирована." });
   };
 
   if (!chat || !user) return null;
@@ -167,7 +189,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
             <Badge variant="outline" className="text-[10px] py-0 px-1 rounded-md bg-muted/50 border-none">
               {isSeller ? 'Продажа' : 'Покупка'}
             </Badge>
-            {chat.dealStatus === 'delivered' && <span className="text-[10px] text-emerald-600 font-bold uppercase animate-pulse">Ожидает подтверждения</span>}
+            {chat.dealStatus === 'delivered' && <span className="text-[10px] text-emerald-600 font-bold uppercase animate-pulse">Передано</span>}
+            {chat.dealStatus === 'received' && <span className="text-[10px] text-orange-600 font-bold uppercase animate-pulse">Получено</span>}
+            {chat.dealStatus === 'completed' && <span className="text-[10px] text-muted-foreground font-bold uppercase">Завершено</span>}
           </div>
         </div>
         
@@ -178,7 +202,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-2xl p-2 w-56">
-            {isSeller && (
+            {isSeller && chat.dealStatus === 'pending' && (
               <>
                 <DropdownMenuItem onClick={sendLocationInfo} className="rounded-xl p-3 gap-2">
                   <MapPin className="w-4 h-4 text-primary" />
@@ -186,14 +210,20 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={markAsDelivered} className="rounded-xl p-3 gap-2 text-emerald-600 font-bold">
                   <CheckCircle2 className="w-4 h-4" />
-                  Я передал вещь
+                  Я передал вещь (Сдал)
                 </DropdownMenuItem>
               </>
             )}
             {isBuyer && chat.dealStatus === 'delivered' && (
               <DropdownMenuItem onClick={confirmReceipt} className="rounded-xl p-3 gap-2 text-emerald-600 font-bold">
                 <CheckCircle2 className="w-4 h-4" />
-                Я получил вещь
+                Я получил вещь (Принял)
+              </DropdownMenuItem>
+            )}
+            {isSeller && chat.dealStatus === 'received' && (
+              <DropdownMenuItem onClick={confirmPayment} className="rounded-xl p-3 gap-2 text-primary font-bold">
+                <CreditCard className="w-4 h-4" />
+                Оплата получена
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
