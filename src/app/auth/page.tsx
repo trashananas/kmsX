@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
 
 export default function AuthPage() {
@@ -66,6 +66,22 @@ export default function AuthPage() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Введите email для сброса пароля." });
+      return;
+    }
+    setLoading(true);
+    try {
+      await initiatePasswordReset(auth, email.trim());
+      toast({ title: "Письмо отправлено", description: "Проверьте почту для сброса пароля." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось отправить письмо. Проверьте адрес." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex items-center justify-center p-4 bg-muted/30">
       <div className="w-full max-w-md">
@@ -107,7 +123,16 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Пароль</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Пароль</Label>
+                      <button 
+                        type="button" 
+                        onClick={handleResetPassword}
+                        className="text-xs text-primary hover:underline font-medium"
+                      >
+                        Забыли пароль?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input 

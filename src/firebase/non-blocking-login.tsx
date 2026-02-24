@@ -1,3 +1,4 @@
+
 "use client";
 import {
   Auth,
@@ -5,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
   UserCredential,
 } from 'firebase/auth';
 
@@ -21,6 +23,11 @@ export function initiateEmailSignUp(authInstance: Auth, email: string, password:
 /** Initiate email/password sign-in. */
 export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
   return signInWithEmailAndPassword(authInstance, email, password);
+}
+
+/** Send password reset email. */
+export function initiatePasswordReset(authInstance: Auth, email: string): Promise<void> {
+  return sendPasswordResetEmail(authInstance, email);
 }
 
 /** Sign out from the current session. */
