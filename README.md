@@ -1,5 +1,19 @@
-# Firebase Studio
+# kmsX — Современный обмен вещами
 
-This is a NextJS starter in Firebase Studio.
+Это приложение построено на NextJS, Tailwind CSS и Firebase.
 
-To get started, take a look at src/app/page.tsx.
+## Архитектура данных
+
+- **Firebase Authentication**: Здесь хранятся учетные данные пользователей (email и пароли). Пароли хранятся в зашифрованном виде на серверах Google и недоступны приложению напрямую. Увидеть список пользователей можно в консоли Firebase во вкладке "Authentication".
+- **Firestore Database**: Здесь хранятся все остальные данные:
+  - `/users/{userId}` — профили (имя, адрес, телефон, банк).
+  - `/item_listings/{itemId}` — объявления о вещах.
+  - `/chats/{chatId}` — сессии переписки и статусы сделок.
+  - `/users/{userId}/favorites` — избранное и бронирования (корзина).
+
+## Разработка
+
+Для управления проектом используйте консоль Firebase. Все изменения в правилах безопасности (`firestore.rules`) применяются автоматически при редактировании файла.
+
+---
+*Сгенерировано в Firebase Studio.*
