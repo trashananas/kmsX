@@ -8,6 +8,7 @@
         "id": { "type": "string" },
         "username": { "type": "string" },
         "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["user", "admin", "super_admin"], "description": "Роль пользователя в системе" },
         "bio": { "type": "string" },
         "profilePictureUrl": { "type": "string", "format": "uri" },
         "address": { "type": "string", "description": "Улица и дом" },

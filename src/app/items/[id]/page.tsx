@@ -11,7 +11,8 @@ import {
   User, 
   MessageCircle,
   Clock,
-  Package
+  Package,
+  Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -199,8 +200,16 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
 
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center justify-between mb-4">
               <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1">{category?.name || 'Разное'}</Badge>
+              {isOwner && (
+                <Link href={`/items/${id}/edit`}>
+                  <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-primary font-bold">
+                    <Pencil className="w-4 h-4" />
+                    Изменить
+                  </Button>
+                </Link>
+              )}
             </div>
             <h1 className="text-4xl font-headline font-bold mb-2 leading-tight">{item.title}</h1>
             <div className="flex items-center gap-4 mb-6">
@@ -233,16 +242,16 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
             {isOwner ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="flex-1 h-14 rounded-xl text-lg font-bold shadow-lg shadow-destructive/20">Удалить</Button>
+                  <Button variant="destructive" className="flex-1 h-14 rounded-xl text-lg font-bold shadow-lg shadow-destructive/20">Удалить объявление</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-[2rem]">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
-                    <AlertDialogDescription>Это действие необратимо.</AlertDialogDescription>
+                    <AlertDialogDescription>Это действие необратимо. Вещь исчезнет из каталога.</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Отмена</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive">Удалить</AlertDialogAction>
+                    <AlertDialogCancel className="rounded-xl">Отмена</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive rounded-xl">Удалить</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
