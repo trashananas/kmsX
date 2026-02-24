@@ -18,7 +18,8 @@ import {
   Phone, 
   CheckCircle2,
   AlertCircle,
-  Banknote
+  Banknote,
+  Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -114,6 +115,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
         floor: sellerProfile.floor,
         apartment: sellerProfile.apartment,
         intercom: sellerProfile.intercom,
+        addressComment: sellerProfile.addressComment,
         phone: sellerProfile.phone,
         bank: sellerProfile.bank
       } 
@@ -262,6 +264,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
                       <span className="opacity-70">Домофон:</span>
                       <span className="font-bold">{msg.infoData?.intercom}</span>
                     </div>
+                    {msg.infoData?.addressComment && (
+                      <div className="p-3 bg-white/10 rounded-xl flex gap-2 border border-white/10">
+                        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="text-xs italic">{msg.infoData.addressComment}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-b border-white/20 pb-2">
                       <span className="opacity-70">Телефон:</span>
                       <span className="font-bold">{msg.infoData?.phone}</span>

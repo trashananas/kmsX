@@ -9,13 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { MapPin, Phone, Wallet, Building2, User } from 'lucide-react';
+import { MapPin, Phone, Wallet, Building2, User, Info } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   
-  // Мемоизируем ссылку на документ, чтобы избежать циклов рендеринга и потери фокуса
   const userRef = useMemoFirebase(() => 
     user ? doc(firestore, 'users', user.uid) : null
   , [firestore, user?.uid]);
@@ -28,11 +27,11 @@ export default function ProfileSettingsPage() {
     floor: '',
     apartment: '',
     intercom: '',
+    addressComment: '',
     phone: '',
     bank: '',
   });
 
-  // Используем флаг для первичной инициализации, чтобы не перезаписывать вводимые данные при каждом обновлении из БД
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -43,6 +42,7 @@ export default function ProfileSettingsPage() {
         floor: profile.floor || '',
         apartment: profile.apartment || '',
         intercom: profile.intercom || '',
+        addressComment: profile.addressComment || '',
         phone: profile.phone || '',
         bank: profile.bank || '',
       });
@@ -140,6 +140,18 @@ export default function ProfileSettingsPage() {
               <div className="space-y-2">
                 <Label>Домофон</Label>
                 <Input value={formData.intercom} onChange={e => setFormData({...formData, intercom: e.target.value})} className="h-12 rounded-xl" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Комментарий (код калитки, как найти и т.д.)</Label>
+              <div className="relative">
+                <Info className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  value={formData.addressComment} 
+                  onChange={e => setFormData({...formData, addressComment: e.target.value})}
+                  className="pl-10 h-12 rounded-xl"
+                  placeholder="Напр: калитка 1234, за углом налево..."
+                />
               </div>
             </div>
           </div>

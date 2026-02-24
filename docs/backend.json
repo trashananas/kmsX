@@ -14,6 +14,7 @@
         "floor": { "type": "string" },
         "apartment": { "type": "string" },
         "intercom": { "type": "string", "description": "Код домофона" },
+        "addressComment": { "type": "string", "description": "Код калитки, как найти и т.д." },
         "phone": { "type": "string" },
         "bank": { "type": "string", "description": "Банк и реквизиты" },
         "createdAt": { "type": "string", "format": "date-time" },
