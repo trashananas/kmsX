@@ -1,22 +1,56 @@
+
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { X, Heart, Info, ArrowLeft, RefreshCw, PackageOpen } from 'lucide-react';
+import { 
+  Heart, 
+  MessageCircle, 
+  ShoppingCart, 
+  Info, 
+  ArrowLeft, 
+  RefreshCw, 
+  PackageOpen,
+  ChevronUp,
+  ChevronDown
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, limit, doc } from 'firebase/firestore';
+import { 
+  useCollection, 
+  useFirestore, 
+  useMemoFirebase, 
+  useUser, 
+  setDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  addDocumentNonBlocking
+} from '@/firebase';
+import { collection, query, where, limit, doc, getDocs } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
-export default function SwipeMode() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
+export default function XTokMode() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  
+  const [isReserveOpen, setIsReserveOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [reserveCount, setReserveCount] = useState(1);
+  const [lastTap, setLastTap] = useState(0);
+  const [showHeartAnim, setShowHeartAnim] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -24,206 +58,266 @@ export default function SwipeMode() {
     }
   }, [user, isUserLoading, router]);
 
-  const swipeQuery = useMemoFirebase(() => {
+  const tokQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const baseRef = collection(firestore, 'item_listings');
     return query(
-      baseRef, 
+      collection(firestore, 'item_listings'), 
       where('status', '==', 'available'),
       where('quantity', '>', 0),
-      limit(50)
+      limit(20)
     );
   }, [firestore, user]);
 
-  const { data: rawItems, isLoading } = useCollection(swipeQuery);
+  const { data: rawItems, isLoading } = useCollection(tokQuery);
   const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
 
   const handleLike = useCallback((item: any) => {
     if (!user || !item) return;
-    
     const favRef = doc(firestore, 'users', user.uid, 'favorites', item.id);
     setDocumentNonBlocking(favRef, {
       itemId: item.id,
       title: item.title,
       imageUrl: item.imageUrls?.[0] || '',
       condition: item.condition || '',
-      locationName: item.locationName || '',
       createdAt: new Date().toISOString()
     }, { merge: true });
+    toast({ title: "Добавлено в лайки", duration: 1000 });
   }, [firestore, user]);
 
-  const handleSwipe = useCallback((dir: 'left' | 'right') => {
-    if (direction || !items.length || currentIndex >= items.length) return;
-    
-    const currentItem = items[currentIndex];
-    if (dir === 'right' && currentItem) {
-      handleLike(currentItem);
+  const handleDoubleTap = (item: any) => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      handleLike(item);
+      setShowHeartAnim(true);
+      setTimeout(() => setShowHeartAnim(false), 800);
     }
-
-    setDirection(dir);
-    setTimeout(() => {
-      setDirection(null);
-      setCurrentIndex(prev => prev + 1);
-    }, 400);
-  }, [direction, items, currentIndex, handleLike]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') handleSwipe('left');
-      if (e.key === 'ArrowRight') handleSwipe('right');
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSwipe]);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
+    setLastTap(now);
   };
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart) return;
-    const touchEnd = e.changedTouches[0].clientX;
-    const delta = touchStart - touchEnd;
+  const handleReserve = async () => {
+    if (!selectedItem || !user || reserveCount <= 0) return;
+    
+    const itemRef = doc(firestore, 'item_listings', selectedItem.id);
+    updateDocumentNonBlocking(itemRef, {
+      quantity: selectedItem.quantity - reserveCount,
+      updatedAt: new Date().toISOString()
+    });
 
-    if (Math.abs(delta) > 50) {
-      if (delta > 0) handleSwipe('left');
-      else handleSwipe('right');
+    const chatsRef = collection(firestore, 'chats');
+    const newChat = await addDocumentNonBlocking(chatsRef, {
+      itemId: selectedItem.id,
+      itemTitle: selectedItem.title,
+      itemImage: selectedItem.imageUrls?.[0] || '',
+      price: selectedItem.price || 0,
+      quantity: reserveCount,
+      buyerId: user.uid,
+      sellerId: selectedItem.ownerId,
+      status: 'active',
+      dealStatus: 'pending',
+      lastMessage: `Забронировано: ${reserveCount} шт.`,
+      updatedAt: new Date().toISOString()
+    });
+
+    addDocumentNonBlocking(collection(firestore, 'chats', (newChat as any).id, 'messages'), {
+      senderId: 'system',
+      text: `Пользователь забронировал товар: ${selectedItem.title} (${reserveCount} шт.)`,
+      type: 'system',
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: "Забронировано!" });
+    setIsReserveOpen(false);
+    router.push(`/chats/${(newChat as any).id}`);
+  };
+
+  const openChat = async (item: any) => {
+    if (!user) return;
+    const chatsRef = collection(firestore, 'chats');
+    const q = query(chatsRef, where('itemId', '==', item.id), where('buyerId', '==', user.uid));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty) {
+      router.push(`/chats/${snap.docs[0].id}`);
+    } else {
+      const newChat = await addDocumentNonBlocking(chatsRef, {
+        itemId: item.id,
+        itemTitle: item.title,
+        itemImage: item.imageUrls?.[0] || '',
+        price: item.price || 0,
+        buyerId: user.uid,
+        sellerId: item.ownerId,
+        status: 'active',
+        dealStatus: 'pending',
+        lastMessage: '',
+        updatedAt: new Date().toISOString()
+      });
+      router.push(`/chats/${(newChat as any).id}`);
     }
-    setTouchStart(null);
   };
 
   if (isUserLoading || isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="h-screen w-full flex items-center justify-center bg-black">
         <RefreshCw className="w-10 h-10 text-primary animate-spin" />
       </div>
     );
   }
 
-  if (!user) return null;
-
-  if (!items.length || currentIndex >= items.length) {
+  if (!items.length) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-28 h-28 bg-primary/10 rounded-full flex items-center justify-center mb-8">
-          <PackageOpen className="w-12 h-12 text-primary" />
-        </div>
-        <h2 className="text-3xl font-bold mb-4 tracking-tight">Лента kmsX пуста!</h2>
-        <p className="text-muted-foreground text-lg mb-10 max-w-sm">Вы просмотрели все доступные вещи от других участников.</p>
-        <div className="flex flex-col gap-4 w-full max-w-xs">
-          <Link href="/items" className="w-full">
-            <Button className="h-14 rounded-2xl w-full text-lg font-bold">К списку</Button>
-          </Link>
-        </div>
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-background p-6 text-center">
+        <PackageOpen className="w-20 h-20 text-muted-foreground/20 mb-6" />
+        <h2 className="text-2xl font-bold mb-2">Лента пуста</h2>
+        <p className="text-muted-foreground mb-8">Заходите позже, когда появятся новые вещи!</p>
+        <Link href="/items">
+          <Button className="rounded-2xl h-14 px-10 text-lg">В каталог</Button>
+        </Link>
       </div>
     );
   }
 
-  const currentItem = items[currentIndex];
-
   return (
-    <div className="fixed inset-0 top-16 bg-background flex flex-col z-40 select-none">
-      <div className="p-4 flex items-center justify-between border-b bg-white shadow-sm">
+    <div className="fixed inset-0 bg-black z-50 overflow-y-scroll snap-y snap-mandatory hide-scrollbar">
+      {/* Header Back Button */}
+      <div className="fixed top-6 left-6 z-[60]">
         <Link href="/items">
-          <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Каталог</span>
-          </Button>
-        </Link>
-        <div className="text-center">
-          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">kmsX DISCOVER</p>
-          <h1 className="text-xs font-medium text-muted-foreground">Листайте или используйте стрелки</h1>
-        </div>
-        <Link href="/favorites">
-          <Button variant="ghost" size="sm" className="gap-2 text-primary rounded-xl">
-            <span className="hidden sm:inline">Лайки</span>
-            <Heart className="w-4 h-4 fill-primary" />
+          <Button variant="ghost" size="icon" className="rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 w-12 h-12">
+            <ArrowLeft className="w-6 h-6" />
           </Button>
         </Link>
       </div>
 
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4 md:p-8">
-        <div className="flex items-center gap-6 md:gap-12 w-full max-w-5xl justify-center">
-          <Button 
-            onClick={() => handleSwipe('left')}
-            variant="outline" 
-            className="hidden md:flex w-20 h-20 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl p-0 shrink-0"
-          >
-            <X className="w-10 h-10" />
-          </Button>
+      {items.map((item) => (
+        <div 
+          key={item.id} 
+          className="h-screen w-full relative snap-start flex items-center justify-center overflow-hidden"
+          onClick={() => handleDoubleTap(item)}
+        >
+          {/* Background Image */}
+          <Image 
+            src={item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/800'} 
+            alt={item.title} 
+            fill 
+            className="object-cover"
+            priority
+          />
+          
+          {/* Heart Animation for Double Tap */}
+          {showHeartAnim && (
+            <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+              <Heart className="w-32 h-32 text-white fill-white animate-ping opacity-70" />
+            </div>
+          )}
 
-          <div 
-            className={`relative w-full max-w-[380px] aspect-[3/4.5] rounded-[3.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.2)] bg-white transition-all duration-500 ease-out cursor-grab active:cursor-grabbing
-              ${direction === 'left' ? '-translate-x-[150%] rotate-[-30deg] opacity-0' : ''}
-              ${direction === 'right' ? 'translate-x-[150%] rotate-[30deg] opacity-0' : ''}
-            `}
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-          >
-            <Image 
-              src={currentItem.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/800'} 
-              alt={currentItem.title} 
-              fill 
-              className="object-cover pointer-events-none"
-              priority
-            />
-            
-            {direction === 'right' && (
-              <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center z-50 backdrop-blur-sm">
-                <div className="border-[12px] border-emerald-500 text-emerald-500 font-black text-7xl px-12 py-6 rounded-3xl rotate-[-15deg] uppercase tracking-tighter shadow-2xl">
-                  ЛАЙК
-                </div>
-              </div>
-            )}
-            {direction === 'left' && (
-              <div className="absolute inset-0 bg-rose-500/30 flex items-center justify-center z-50 backdrop-blur-sm">
-                <div className="border-[12px] border-rose-500 text-rose-500 font-black text-7xl px-12 py-6 rounded-3xl rotate-[15deg] uppercase tracking-tighter shadow-2xl">
-                  НЕТ
-                </div>
-              </div>
-            )}
+          {/* Bottom Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
-            <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/95 via-black/40 to-transparent text-white">
-              <div className="flex items-end justify-between gap-4">
-                <div className="flex-1">
-                  <Badge className="bg-primary text-white border-none mb-4 backdrop-blur-xl px-4 py-1.5 text-xs font-bold uppercase tracking-widest">
-                    {currentItem.condition || 'Любое состояние'}
-                  </Badge>
-                  <h2 className="text-3xl font-bold mb-2 leading-[1.1] tracking-tight">{currentItem.title}</h2>
-                </div>
-                <Link href={`/items/${currentItem.id}?from=swipe`} className="shrink-0">
-                  <Button variant="outline" size="icon" className="rounded-full h-14 w-14 bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary hover:border-white shadow-lg backdrop-blur-md">
-                    <Info className="w-7 h-7" />
-                  </Button>
-                </Link>
-              </div>
+          {/* Info Overlay (Bottom Left) */}
+          <div className="absolute bottom-10 left-6 right-20 text-white z-40">
+            <Badge className="bg-primary/80 border-none mb-3 px-3 py-1 font-bold">
+              {item.condition}
+            </Badge>
+            <h2 className="text-3xl font-black mb-2 drop-shadow-lg tracking-tight leading-none uppercase italic">
+              {item.title}
+            </h2>
+            <p className="text-sm text-white/70 line-clamp-3 max-w-[80%] leading-relaxed">
+              {item.description}
+            </p>
+            <div className="mt-4 flex items-center gap-3">
+              <span className="text-2xl font-black text-accent">{item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}</span>
+              <span className="text-xs opacity-50 font-bold uppercase tracking-widest">В наличии: {item.quantity}</span>
             </div>
           </div>
 
-          <Button 
-            onClick={() => handleSwipe('right')}
-            className="hidden md:flex w-20 h-20 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40 p-0 shrink-0 border-none"
-          >
-            <Heart className="w-10 h-10 fill-current" />
-          </Button>
-        </div>
-      </div>
+          {/* Action Panel (Right Side) */}
+          <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-50">
+            <div className="flex flex-col items-center gap-1">
+              <Button 
+                onClick={(e) => { e.stopPropagation(); handleLike(item); }}
+                className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0"
+              >
+                <Heart className="w-7 h-7" />
+              </Button>
+              <span className="text-[10px] font-bold text-white uppercase opacity-70">Лайк</span>
+            </div>
 
-      <div className="md:hidden p-10 flex items-center justify-center gap-8 bg-background border-t">
-        <Button 
-          onClick={() => handleSwipe('left')}
-          variant="outline" 
-          className="w-16 h-16 rounded-full border-2 border-rose-100 bg-white text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl p-0"
-        >
-          <X className="w-8 h-8" />
-        </Button>
-        <Button 
-          onClick={() => handleSwipe('right')}
-          className="w-16 h-16 rounded-full bg-primary text-white hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-primary/40 p-0"
-        >
-          <Heart className="w-8 h-8 fill-current" />
-        </Button>
-      </div>
+            <div className="flex flex-col items-center gap-1">
+              <Button 
+                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setIsReserveOpen(true); }}
+                className="w-14 h-14 rounded-full bg-accent/90 backdrop-blur-xl hover:scale-110 active:scale-90 transition-all text-accent-foreground p-0 shadow-lg shadow-accent/20"
+              >
+                <ShoppingCart className="w-7 h-7" />
+              </Button>
+              <span className="text-[10px] font-bold text-white uppercase opacity-70">Бронь</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <Button 
+                onClick={(e) => { e.stopPropagation(); openChat(item); }}
+                className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0"
+              >
+                <MessageCircle className="w-7 h-7" />
+              </Button>
+              <span className="text-[10px] font-bold text-white uppercase opacity-70">Чат</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1">
+              <Link href={`/items/${item.id}`} onClick={(e) => e.stopPropagation()}>
+                <Button className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0">
+                  <Info className="w-7 h-7" />
+                </Button>
+              </Link>
+              <span className="text-[10px] font-bold text-white uppercase opacity-70">Инфо</span>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Reservation Dialog */}
+      <Dialog open={isReserveOpen} onOpenChange={setIsReserveOpen}>
+        <DialogContent className="rounded-[2.5rem] p-8">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black italic uppercase">Бронирование</DialogTitle>
+            <DialogDescription>Укажите количество для покупки. Мы сразу создадим чат с продавцом.</DialogDescription>
+          </DialogHeader>
+          <div className="py-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Сколько штук?</Label>
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-xl h-12 w-12"
+                  onClick={() => setReserveCount(Math.max(1, reserveCount - 1))}
+                >
+                  <ChevronDown />
+                </Button>
+                <Input 
+                  type="number" 
+                  value={reserveCount} 
+                  onChange={(e) => setReserveCount(parseInt(e.target.value))}
+                  className="text-center text-xl font-bold h-12 rounded-xl"
+                  min="1"
+                  max={selectedItem?.quantity}
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-xl h-12 w-12"
+                  onClick={() => setReserveCount(Math.min(selectedItem?.quantity || 1, reserveCount + 1))}
+                >
+                  <ChevronUp />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleReserve} className="w-full h-14 rounded-2xl text-lg font-bold uppercase italic tracking-tighter">
+              Подтвердить бронь
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
