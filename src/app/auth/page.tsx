@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Layers, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Layers, Mail, Lock, User, ArrowRight, Ghost } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset, initiateAnonymousSignIn } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
 
 export default function AuthPage() {
@@ -61,6 +61,18 @@ export default function AuthPage() {
       if (err.code === 'auth/weak-password') message = "Слишком простой пароль (минимум 6 символов).";
       
       toast({ variant: "destructive", title: "Ошибка", description: message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setLoading(true);
+    try {
+      await initiateAnonymousSignIn(auth);
+      toast({ title: "Вход как гость", description: "Временный доступ в kmsX активирован." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось войти как гость." });
     } finally {
       setLoading(false);
     }
@@ -146,7 +158,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="p-10 pt-0">
+                <CardFooter className="p-10 pt-0 flex flex-col gap-4">
                   <Button type="submit" className="w-full h-14 rounded-2xl group shadow-lg shadow-primary/20 text-lg font-bold" disabled={loading}>
                     {loading ? "Загрузка..." : (
                       <>
@@ -154,6 +166,22 @@ export default function AuthPage() {
                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
+                  </Button>
+                  
+                  <div className="relative w-full py-2">
+                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-muted" /></div>
+                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">Или</span></div>
+                  </div>
+
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleGuestLogin}
+                    className="w-full h-14 rounded-2xl border-2 border-dashed border-primary/20 text-primary hover:bg-primary/5 font-bold gap-3"
+                    disabled={loading}
+                  >
+                    <Ghost className="w-5 h-5" />
+                    Войти как гость
                   </Button>
                 </CardFooter>
               </form>
