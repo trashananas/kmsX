@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import MobileFullscreenPrompt from '@/components/MobileFullscreenPrompt';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -54,8 +55,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="icon" href="/logo.png" />
         <title>kmsX | Современный обмен вещами</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
-      <body className="font-body antialiased min-h-screen bg-background">
+      <body className="font-body antialiased min-h-screen bg-background overflow-x-hidden">
         <FirebaseClientProvider>
           <DynamicBranding />
           <AuthGuard>
@@ -64,6 +66,7 @@ export default function RootLayout({
               {children}
             </div>
             <Toaster />
+            <MobileFullscreenPrompt />
           </AuthGuard>
         </FirebaseClientProvider>
       </body>

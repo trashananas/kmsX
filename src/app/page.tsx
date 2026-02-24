@@ -21,12 +21,12 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[calc(100vh-6rem)] flex items-center justify-center overflow-hidden">
         {/* Мягкий фоновый градиент с плавным переходом */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background pointer-events-none" />
         
-        <div className="container px-4 text-center z-10 py-20 animate-in fade-in zoom-in duration-1000">
-          <div className="relative w-64 h-64 md:w-96 md:h-96 mx-auto mb-12 shadow-2xl rounded-[4rem] overflow-hidden border-8 border-white bg-white">
+        <div className="container px-6 text-center z-10 py-12 animate-in fade-in zoom-in duration-1000">
+          <div className="relative w-56 h-56 md:w-80 md:h-80 mx-auto mb-8 md:mb-12 shadow-2xl rounded-[3rem] md:rounded-[4rem] overflow-hidden border-8 border-white bg-white">
             <Image 
               src={logoUrl} 
               alt="Клуб логотип" 
@@ -35,23 +35,23 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-5xl md:text-8xl font-headline font-black mb-12 tracking-tighter uppercase">
+          <h1 className="text-6xl md:text-8xl font-headline font-black mb-10 md:mb-16 tracking-tighter uppercase">
             Встречайте <span className="text-primary italic">kmsX</span>
           </h1>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center max-w-xs sm:max-w-none mx-auto">
             {user ? (
-              <Link href="/items">
-                <Button size="lg" className="px-16 h-20 text-2xl rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
+              <Link href="/items" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:px-16 h-16 md:h-20 text-xl md:text-2xl rounded-[1.5rem] md:rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
                   Смотреть вещи
-                  <Zap className="ml-3 w-8 h-8 group-hover:scale-125 transition-transform fill-white" />
+                  <Zap className="ml-3 w-6 h-6 md:w-8 md:h-8 group-hover:scale-125 transition-transform fill-white" />
                 </Button>
               </Link>
             ) : (
-              <Link href="/auth">
-                <Button size="lg" className="px-16 h-20 text-2xl rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
+              <Link href="/auth" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:px-16 h-16 md:h-20 text-xl md:text-2xl rounded-[1.5rem] md:rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
                   Начать обмен
-                  <Zap className="ml-3 w-8 h-8 group-hover:scale-125 transition-transform fill-white" />
+                  <Zap className="ml-3 w-6 h-6 md:w-8 md:h-8 group-hover:scale-125 transition-transform fill-white" />
                 </Button>
               </Link>
             )}
@@ -59,30 +59,11 @@ export default function Home() {
         </div>
         
         {/* Декоративные элементы */}
-        <div className="absolute -bottom-40 -left-40 w-[30rem] h-[30rem] bg-accent/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute -top-40 -right-40 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-[100px] animate-pulse delay-1000" />
+        <div className="absolute -bottom-40 -left-40 w-[20rem] md:w-[30rem] h-[20rem] md:h-[30rem] bg-accent/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute -top-40 -right-40 w-[20rem] md:w-[30rem] h-[20rem] md:h-[30rem] bg-primary/10 rounded-full blur-[100px] animate-pulse delay-1000" />
       </section>
 
-      {/* CTA Section */}
-      {!user && (
-        <section className="container px-4 py-24">
-          <div className="bg-primary rounded-[5rem] p-16 md:p-24 text-center text-primary-foreground relative overflow-hidden shadow-2xl">
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-6xl font-headline font-black mb-10 uppercase tracking-tighter leading-none">Присоединяйтесь к нашему клубу</h2>
-              <p className="text-primary-foreground/90 max-w-2xl mx-auto mb-14 text-xl md:text-2xl font-medium leading-relaxed">
-                Начните обмениваться вещами прямо сейчас. Регистрация в kmsX занимает меньше минуты.
-              </p>
-              <Link href="/auth">
-                <Button size="lg" variant="secondary" className="px-20 h-24 text-3xl rounded-[2.5rem] font-black uppercase shadow-2xl tracking-tighter hover:scale-105 transition-transform bg-white text-primary">
-                  Создать аккаунт
-                </Button>
-              </Link>
-            </div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-          </div>
-        </section>
-      )}
+      {/* Лишние CTA секции удалены для чистоты мобильного вида */}
     </div>
   );
 }

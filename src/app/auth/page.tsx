@@ -3,14 +3,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, User, ArrowRight, Ghost, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
 
 export default function AuthPage() {
@@ -37,8 +37,6 @@ export default function AuthPage() {
     
     setLoading(true);
     try {
-      // Firebase запоминает пользователя по умолчанию (Local Persistence).
-      // Здесь мы просто отображаем галочку для UI/UX.
       await initiateEmailSignIn(auth, email.trim(), password);
       toast({ title: "Вход выполнен", description: "Рады видеть вас снова в kmsX!" });
     } catch (err: any) {
@@ -70,18 +68,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleGuestLogin = async () => {
-    setLoading(true);
-    try {
-      await initiateAnonymousSignIn(auth);
-      toast({ title: "Вход как гость", description: "Временный доступ в kmsX активирован." });
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось войти как гость." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleResetPassword = async () => {
     if (!email) {
       toast({ variant: "destructive", title: "Ошибка", description: "Введите email для сброса пароля." });
@@ -99,10 +85,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 bg-muted/30">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <h1 className="text-4xl font-black font-headline mb-2 tracking-tighter uppercase">Вход в kmsX</h1>
+    <div className="flex-1 flex items-center justify-center p-6 bg-muted/30">
+      <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-black font-headline mb-3 tracking-tighter uppercase">Вход в kmsX</h1>
           <p className="text-muted-foreground font-medium italic">Клуб многодетных семей Выхино-Жулебино</p>
         </div>
 
@@ -114,12 +100,12 @@ export default function AuthPage() {
           
           <TabsContent value="login">
             <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
-              <CardHeader className="pt-10 px-10">
+              <CardHeader className="pt-10 px-8 md:px-10">
                 <CardTitle className="text-2xl font-bold">Войти</CardTitle>
                 <CardDescription>Введите данные для доступа к вашему аккаунту.</CardDescription>
               </CardHeader>
               <form onSubmit={handleLogin}>
-                <CardContent className="space-y-4 p-10">
+                <CardContent className="space-y-4 p-8 md:px-10 pb-6">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="font-bold">Email</Label>
                     <div className="relative">
@@ -181,7 +167,7 @@ export default function AuthPage() {
                     </label>
                   </div>
                 </CardContent>
-                <CardFooter className="p-10 pt-0 flex flex-col gap-4">
+                <CardFooter className="p-8 md:px-10 pt-0">
                   <Button type="submit" className="w-full h-14 rounded-2xl group shadow-lg shadow-primary/20 text-lg font-black uppercase tracking-tight" disabled={loading}>
                     {loading ? "Загрузка..." : (
                       <>
@@ -190,22 +176,6 @@ export default function AuthPage() {
                       </>
                     )}
                   </Button>
-                  
-                  <div className="relative w-full py-2">
-                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-muted" /></div>
-                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground font-bold">Или</span></div>
-                  </div>
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleGuestLogin}
-                    className="w-full h-14 rounded-2xl border-2 border-dashed border-primary/20 text-primary hover:bg-primary/5 font-black uppercase tracking-tight gap-3"
-                    disabled={loading}
-                  >
-                    <Ghost className="w-5 h-5" />
-                    Войти как гость
-                  </Button>
                 </CardFooter>
               </form>
             </Card>
@@ -213,12 +183,12 @@ export default function AuthPage() {
 
           <TabsContent value="signup">
             <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
-              <CardHeader className="pt-10 px-10">
+              <CardHeader className="pt-10 px-8 md:px-10">
                 <CardTitle className="text-2xl font-bold">Новый аккаунт</CardTitle>
                 <CardDescription>Станьте частью нашего сообщества.</CardDescription>
               </CardHeader>
               <form onSubmit={handleSignUp}>
-                <CardContent className="space-y-4 p-10">
+                <CardContent className="space-y-4 p-8 md:px-10">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="font-bold">Имя</Label>
                     <div className="relative">
@@ -270,7 +240,7 @@ export default function AuthPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="p-10 pt-0">
+                <CardFooter className="p-8 md:px-10 pt-0">
                   <Button type="submit" className="w-full h-14 rounded-2xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20 text-lg font-black uppercase tracking-tight" disabled={loading}>
                     {loading ? "Создание..." : "Зарегистрироваться"}
                   </Button>
