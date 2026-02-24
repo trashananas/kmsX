@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // РЕЖИМ ПОЛНОЙ ЛОЯЛЬНОСТИ ДЛЯ РАЗРАБОТКИ
     // Разрешаем всё для всех коллекций без исключения
-    // Последнее обновление: 2024-05-24 18:30:00 (Global Open Access)
+    // Последнее обновление: 2024-05-24 19:15:00 (Global Open Access)
 
     match /{document=**} {
       allow read, write: if true;

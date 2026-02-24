@@ -22,7 +22,6 @@ const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
   { label: 'Категории', href: '/categories', icon: Layers },
   { label: 'Лайки', href: '/favorites', icon: Heart },
-  { label: 'Чаты', href: '/chats', icon: MessageSquare },
 ];
 
 export default function Navbar() {
@@ -75,15 +74,24 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           {user && (
-            <Link href="/items/new">
-              <Button className="hidden sm:flex gap-2 rounded-xl">
-                <PlusCircle className="w-4 h-4" />
-                Разместить
-              </Button>
-              <Button size="icon" className="sm:hidden rounded-xl">
-                <PlusCircle className="w-5 h-5" />
-              </Button>
-            </Link>
+            <>
+              <Link href="/items/new">
+                <Button className="hidden sm:flex gap-2 rounded-xl">
+                  <PlusCircle className="w-4 h-4" />
+                  Разместить
+                </Button>
+                <Button size="icon" className="sm:hidden rounded-xl">
+                  <PlusCircle className="w-5 h-5" />
+                </Button>
+              </Link>
+
+              <Link href="/chats">
+                <Button className="rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20 font-bold gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Чаты</span>
+                </Button>
+              </Link>
+            </>
           )}
 
           {user ? (
