@@ -26,15 +26,18 @@ const MOCK_ITEMS_DATA = [
 ];
 
 function BrowseItemsContent() {
+  const searchParams = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(categoryFromUrl || 'all');
   const [showOnlyFree, setShowOnlyFree] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [activeMineTab, setActiveMineTab] = useState('active');
+  
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
-  const searchParams = useSearchParams();
   const showOnlyMine = searchParams.get('owner') === 'me';
 
   useEffect(() => {
@@ -42,6 +45,13 @@ function BrowseItemsContent() {
       router.push('/auth');
     }
   }, [user, isUserLoading, router]);
+
+  // Sync state with URL parameter if it changes (e.g. from Categories page)
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedCategoryId(categoryFromUrl);
+    }
+  }, [categoryFromUrl]);
 
   const itemsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -96,6 +106,10 @@ function BrowseItemsContent() {
     setSelectedCategoryId(id);
     if (id === 'archive' && showOnlyMine) {
       router.push('/items');
+    }
+    // Clear URL parameter if manually changing category in sidebar
+    if (categoryFromUrl && id !== categoryFromUrl) {
+      router.replace(showOnlyMine ? '/items?owner=me' : '/items');
     }
   };
 
