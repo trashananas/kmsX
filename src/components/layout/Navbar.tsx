@@ -21,7 +21,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
   { label: 'Категории', href: '/categories', icon: Layers },
-  { label: 'Лента', href: '/swipe', icon: Zap },
+  { label: 'X-Tok', href: '/swipe', icon: Zap },
 ];
 
 export default function Navbar() {

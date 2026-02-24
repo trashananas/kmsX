@@ -25,7 +25,8 @@ import {
   useUser, 
   setDocumentNonBlocking,
   updateDocumentNonBlocking,
-  addDocumentNonBlocking
+  addDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from '@/firebase';
 import { collection, query, where, limit, doc, getDocs } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -51,12 +52,26 @@ export default function XTokMode() {
   const [reserveCount, setReserveCount] = useState(1);
   const [lastTap, setLastTap] = useState(0);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/auth');
     }
   }, [user, isUserLoading, router]);
+
+  // Загружаем лайки пользователя, чтобы отображать состояние кнопок
+  useEffect(() => {
+    if (!user) return;
+    const favsRef = collection(firestore, 'users', user.uid, 'favorites');
+    getDocs(favsRef).then(snap => {
+      const favMap: Record<string, boolean> = {};
+      snap.docs.forEach(d => {
+        favMap[d.id] = true;
+      });
+      setFavorites(favMap);
+    });
+  }, [user, firestore]);
 
   const tokQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -71,23 +86,33 @@ export default function XTokMode() {
   const { data: rawItems, isLoading } = useCollection(tokQuery);
   const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
 
-  const handleLike = useCallback((item: any) => {
+  const handleToggleLike = useCallback((item: any) => {
     if (!user || !item) return;
     const favRef = doc(firestore, 'users', user.uid, 'favorites', item.id);
-    setDocumentNonBlocking(favRef, {
-      itemId: item.id,
-      title: item.title,
-      imageUrl: item.imageUrls?.[0] || '',
-      condition: item.condition || '',
-      createdAt: new Date().toISOString()
-    }, { merge: true });
-    toast({ title: "Добавлено в лайки", duration: 1000 });
-  }, [firestore, user]);
+    const isLiked = favorites[item.id];
+
+    if (isLiked) {
+      deleteDocumentNonBlocking(favRef);
+      setFavorites(prev => ({ ...prev, [item.id]: false }));
+    } else {
+      setDocumentNonBlocking(favRef, {
+        itemId: item.id,
+        title: item.title,
+        imageUrl: item.imageUrls?.[0] || '',
+        condition: item.condition || '',
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+      setFavorites(prev => ({ ...prev, [item.id]: true }));
+      toast({ title: "Добавлено в лайки", duration: 1000 });
+    }
+  }, [firestore, user, favorites]);
 
   const handleDoubleTap = (item: any) => {
     const now = Date.now();
     if (now - lastTap < 300) {
-      handleLike(item);
+      if (!favorites[item.id]) {
+        handleToggleLike(item);
+      }
       setShowHeartAnim(true);
       setTimeout(() => setShowHeartAnim(false), 800);
     }
@@ -98,10 +123,23 @@ export default function XTokMode() {
     if (!selectedItem || !user || reserveCount <= 0) return;
     
     const itemRef = doc(firestore, 'item_listings', selectedItem.id);
+    const availableQuantity = selectedItem.quantity || 1;
+    
     updateDocumentNonBlocking(itemRef, {
-      quantity: selectedItem.quantity - reserveCount,
+      quantity: availableQuantity - reserveCount,
       updatedAt: new Date().toISOString()
     });
+
+    // Дублируем логику из ItemCard/ItemDetails: добавляем в favorites как бронь
+    const favRef = doc(firestore, 'users', user.uid, 'favorites', selectedItem.id);
+    setDocumentNonBlocking(favRef, {
+      itemId: selectedItem.id,
+      title: selectedItem.title,
+      imageUrl: selectedItem.imageUrls?.[0] || '',
+      condition: selectedItem.condition || '',
+      reservedCount: reserveCount,
+      createdAt: new Date().toISOString()
+    }, { merge: true });
 
     const chatsRef = collection(firestore, 'chats');
     const newChat = await addDocumentNonBlocking(chatsRef, {
@@ -167,7 +205,7 @@ export default function XTokMode() {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-background p-6 text-center">
         <PackageOpen className="w-20 h-20 text-muted-foreground/20 mb-6" />
-        <h2 className="text-2xl font-bold mb-2">Лента пуста</h2>
+        <h2 className="text-2xl font-bold mb-2">X-Tok пуст</h2>
         <p className="text-muted-foreground mb-8">Заходите позже, когда появятся новые вещи!</p>
         <Link href="/items">
           <Button className="rounded-2xl h-14 px-10 text-lg">В каталог</Button>
@@ -187,91 +225,99 @@ export default function XTokMode() {
         </Link>
       </div>
 
-      {items.map((item) => (
-        <div 
-          key={item.id} 
-          className="h-screen w-full relative snap-start flex items-center justify-center overflow-hidden"
-          onClick={() => handleDoubleTap(item)}
-        >
-          {/* Background Image */}
-          <Image 
-            src={item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/800'} 
-            alt={item.title} 
-            fill 
-            className="object-cover"
-            priority
-          />
-          
-          {/* Heart Animation for Double Tap */}
-          {showHeartAnim && (
-            <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
-              <Heart className="w-32 h-32 text-white fill-white animate-ping opacity-70" />
-            </div>
-          )}
+      {items.map((item) => {
+        const isLiked = favorites[item.id];
+        return (
+          <div 
+            key={item.id} 
+            className="h-screen w-full relative snap-start flex items-center justify-center overflow-hidden"
+            onClick={() => handleDoubleTap(item)}
+          >
+            {/* Background Image */}
+            <Image 
+              src={item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/800'} 
+              alt={item.title} 
+              fill 
+              className="object-cover"
+              priority
+            />
+            
+            {/* Heart Animation for Double Tap */}
+            {showHeartAnim && (
+              <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+                <Heart className="w-32 h-32 text-white fill-white animate-ping opacity-70" />
+              </div>
+            )}
 
-          {/* Bottom Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+            {/* Bottom Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
 
-          {/* Info Overlay (Bottom Left) */}
-          <div className="absolute bottom-10 left-6 right-20 text-white z-40">
-            <Badge className="bg-primary/80 border-none mb-3 px-3 py-1 font-bold">
-              {item.condition}
-            </Badge>
-            <h2 className="text-3xl font-black mb-2 drop-shadow-lg tracking-tight leading-none uppercase italic">
-              {item.title}
-            </h2>
-            <p className="text-sm text-white/70 line-clamp-3 max-w-[80%] leading-relaxed">
-              {item.description}
-            </p>
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-2xl font-black text-accent">{item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}</span>
-              <span className="text-xs opacity-50 font-bold uppercase tracking-widest">В наличии: {item.quantity}</span>
-            </div>
-          </div>
-
-          {/* Action Panel (Right Side) */}
-          <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-50">
-            <div className="flex flex-col items-center gap-1">
-              <Button 
-                onClick={(e) => { e.stopPropagation(); handleLike(item); }}
-                className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0"
-              >
-                <Heart className="w-7 h-7" />
-              </Button>
-              <span className="text-[10px] font-bold text-white uppercase opacity-70">Лайк</span>
+            {/* Info Overlay (Bottom Left) */}
+            <div className="absolute bottom-10 left-6 right-20 text-white z-40">
+              <Badge className="bg-primary/80 border-none mb-3 px-3 py-1 font-bold">
+                {item.condition}
+              </Badge>
+              <h2 className="text-3xl font-black mb-2 drop-shadow-lg tracking-tight leading-none uppercase italic">
+                {item.title}
+              </h2>
+              <p className="text-sm text-white/70 line-clamp-3 max-w-[80%] leading-relaxed">
+                {item.description}
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-2xl font-black text-accent">{item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}</span>
+                <span className="text-xs opacity-50 font-bold uppercase tracking-widest">В наличии: {item.quantity}</span>
+              </div>
             </div>
 
-            <div className="flex flex-col items-center gap-1">
-              <Button 
-                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setIsReserveOpen(true); }}
-                className="w-14 h-14 rounded-full bg-accent/90 backdrop-blur-xl hover:scale-110 active:scale-90 transition-all text-accent-foreground p-0 shadow-lg shadow-accent/20"
-              >
-                <ShoppingCart className="w-7 h-7" />
-              </Button>
-              <span className="text-[10px] font-bold text-white uppercase opacity-70">Бронь</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1">
-              <Button 
-                onClick={(e) => { e.stopPropagation(); openChat(item); }}
-                className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0"
-              >
-                <MessageCircle className="w-7 h-7" />
-              </Button>
-              <span className="text-[10px] font-bold text-white uppercase opacity-70">Чат</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1">
-              <Link href={`/items/${item.id}`} onClick={(e) => e.stopPropagation()}>
-                <Button className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0">
-                  <Info className="w-7 h-7" />
+            {/* Action Panel (Right Side) */}
+            <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-50">
+              <div className="flex flex-col items-center gap-1">
+                <Button 
+                  onClick={(e) => { e.stopPropagation(); handleToggleLike(item); }}
+                  className={cn(
+                    "w-14 h-14 rounded-full backdrop-blur-xl border transition-all p-0",
+                    isLiked 
+                      ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-110" 
+                      : "bg-black/20 text-white border-white/20 hover:scale-110 active:scale-90"
+                  )}
+                >
+                  <Heart className={cn("w-7 h-7", isLiked && "fill-current")} />
                 </Button>
-              </Link>
-              <span className="text-[10px] font-bold text-white uppercase opacity-70">Инфо</span>
+                <span className="text-[10px] font-bold text-white uppercase opacity-70">{isLiked ? 'Супер' : 'Лайк'}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1">
+                <Button 
+                  onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setIsReserveOpen(true); }}
+                  className="w-14 h-14 rounded-full bg-accent/90 backdrop-blur-xl hover:scale-110 active:scale-90 transition-all text-accent-foreground p-0 shadow-lg shadow-accent/20"
+                >
+                  <ShoppingCart className="w-7 h-7" />
+                </Button>
+                <span className="text-[10px] font-bold text-white uppercase opacity-70">Бронь</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1">
+                <Button 
+                  onClick={(e) => { e.stopPropagation(); openChat(item); }}
+                  className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0"
+                >
+                  <MessageCircle className="w-7 h-7" />
+                </Button>
+                <span className="text-[10px] font-bold text-white uppercase opacity-70">Чат</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1">
+                <Link href={`/items/${item.id}`} onClick={(e) => e.stopPropagation()}>
+                  <Button className="w-14 h-14 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 hover:scale-110 active:scale-90 transition-all text-white p-0">
+                    <Info className="w-7 h-7" />
+                  </Button>
+                </Link>
+                <span className="text-[10px] font-bold text-white uppercase opacity-70">Инфо</span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Reservation Dialog */}
       <Dialog open={isReserveOpen} onOpenChange={setIsReserveOpen}>
