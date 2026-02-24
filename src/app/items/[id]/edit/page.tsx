@@ -72,7 +72,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
       <div className="container px-4 py-20 text-center">
         <h2 className="text-2xl font-bold mb-4">Пожалуйста, войдите</h2>
         <Link href="/auth">
-          <Button>Войти</Button>
+          <Button className="rounded-xl h-12 px-8">Войти</Button>
         </Link>
       </div>
     );
@@ -83,7 +83,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
       <div className="container px-4 py-20 text-center">
         <h2 className="text-2xl font-bold mb-4">У вас нет прав для редактирования этого объявления</h2>
         <Link href="/items">
-          <Button>В каталог</Button>
+          <Button className="rounded-xl h-12 px-8">В каталог</Button>
         </Link>
       </div>
     );
@@ -155,7 +155,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label>Фотография</Label>
+            <Label className="font-bold">Фотография</Label>
             <input 
               type="file" 
               accept="image/*" 
@@ -194,11 +194,11 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
 
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Название</Label>
+              <Label htmlFor="title" className="font-bold">Название</Label>
               <Input 
                 id="title" 
                 required 
-                className="h-12 rounded-xl"
+                className="h-12 rounded-xl bg-muted/20 border-none px-4 font-medium"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
               />
@@ -206,12 +206,12 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Категория</Label>
+                <Label htmlFor="category" className="font-bold">Категория</Label>
                 <Select value={formData.categoryId} onValueChange={(val) => setFormData({...formData, categoryId: val})} required>
-                  <SelectTrigger className="h-12 rounded-xl">
+                  <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none font-medium">
                     <SelectValue placeholder="Выберите категорию" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {categories?.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
@@ -219,12 +219,12 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="condition">Состояние</Label>
+                <Label htmlFor="condition" className="font-bold">Состояние</Label>
                 <Select value={formData.condition} onValueChange={(val) => setFormData({...formData, condition: val})} required>
-                  <SelectTrigger className="h-12 rounded-xl">
+                  <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none font-medium">
                     <SelectValue placeholder="Состояние" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="Новое">Новое</SelectItem>
                     <SelectItem value="Как новое">Как новое</SelectItem>
                     <SelectItem value="Хорошее">Хорошее</SelectItem>
@@ -236,38 +236,38 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Цена</Label>
+                <Label htmlFor="price" className="font-bold">Цена</Label>
                 <div className="relative">
                   <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input 
                     id="price" 
                     type="number" 
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-10 h-12 rounded-xl bg-muted/20 border-none font-medium"
                     value={formData.price}
                     onChange={(e) => setFormData({...formData, price: e.target.value})}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bank">Банк</Label>
+                <Label htmlFor="bank" className="font-bold">Банк</Label>
                 <div className="relative">
                   <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input 
                     id="bank" 
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-10 h-12 rounded-xl bg-muted/20 border-none font-medium"
                     value={formData.bank}
                     onChange={(e) => setFormData({...formData, bank: e.target.value})}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quantity">Количество</Label>
+                <Label htmlFor="quantity" className="font-bold">Количество</Label>
                 <div className="relative">
                   <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input 
                     id="quantity" 
                     type="number" 
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-10 h-12 rounded-xl bg-muted/20 border-none font-medium"
                     value={formData.quantity}
                     onChange={(e) => setFormData({...formData, quantity: e.target.value})}
                   />
@@ -277,17 +277,17 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Описание</Label>
+            <Label htmlFor="description" className="font-bold">Описание</Label>
             <Textarea 
               id="description" 
-              className="min-h-[120px] rounded-xl resize-none"
+              className="min-h-[120px] rounded-xl resize-none bg-muted/20 border-none px-4 py-3 font-medium"
               required
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
             />
           </div>
 
-          <Button type="submit" className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/20 font-bold" disabled={loading}>
+          <Button type="submit" className="w-full h-16 text-lg rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-tight" disabled={loading}>
             {loading ? "Сохранение..." : "Сохранить изменения"}
           </Button>
         </form>

@@ -39,7 +39,11 @@ export default function Navbar() {
   const brandingRef = useMemoFirebase(() => doc(firestore, 'settings', 'branding'), [firestore]);
   const { data: branding } = useDoc(brandingRef as any);
 
-  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
+  const currentUserRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: currentUserProfile } = useDoc(currentUserRef as any);
+
+  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL || currentUserProfile?.role === 'super_admin';
+  const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin';
 
   useEffect(() => {
     setMounted(true);
@@ -60,7 +64,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-110">
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-110 bg-white">
             <Image 
               src={logoUrl} 
               alt="Logo" 
@@ -96,12 +100,12 @@ export default function Navbar() {
               <Heart className="w-4 h-4" />
               Лайки
             </Link>
-            {isSuperAdmin && (
+            {isAdmin && (
               <Link 
                 href="/admin"
                 className={cn(
-                  "flex items-center gap-1.5 text-sm font-bold transition-colors text-rose-600 hover:text-rose-700 uppercase tracking-wide",
-                  pathname === '/admin' ? "text-rose-600" : "text-rose-600/70"
+                  "flex items-center gap-1.5 text-sm font-bold transition-colors text-primary hover:text-primary/80 uppercase tracking-wide",
+                  pathname === '/admin' ? "text-primary" : "text-primary/70"
                 )}
               >
                 <ShieldAlert className="w-4 h-4" />
@@ -115,7 +119,7 @@ export default function Navbar() {
           {user && (
             <>
               <Link href="/items/new">
-                <Button className="hidden sm:flex gap-2 rounded-xl font-bold uppercase tracking-tight">
+                <Button className="hidden sm:flex gap-2 rounded-xl font-bold uppercase tracking-tight shadow-md">
                   <PlusCircle className="w-4 h-4" />
                   Разместить
                 </Button>
@@ -153,53 +157,52 @@ export default function Navbar() {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 rounded-2xl p-2" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal px-2 py-2">
+              <DropdownMenuContent className="w-64 rounded-2xl p-2 border-none shadow-2xl" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal px-3 py-3 bg-muted/30 rounded-xl mb-2">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-bold leading-none uppercase">Профиль</p>
-                    <p className="text-xs leading-none text-muted-foreground">
+                    <p className="text-sm font-black leading-none uppercase tracking-tight">Мой кабинет</p>
+                    <p className="text-xs leading-none text-muted-foreground truncate">
                       {user.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/profile" className="cursor-pointer flex items-center gap-2 font-medium">
-                    <User className="w-4 h-4" /> Настройки профиля
+                <DropdownMenuItem asChild className="rounded-xl cursor-pointer p-3 font-bold">
+                  <Link href="/profile" className="flex items-center gap-3">
+                    <User className="w-4 h-4 text-primary" /> Настройки профиля
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/items?owner=me" className="cursor-pointer flex items-center gap-2 font-medium">
-                    <Package className="w-4 h-4" /> Мои объявления
+                <DropdownMenuItem asChild className="rounded-xl cursor-pointer p-3 font-bold">
+                  <Link href="/items?owner=me" className="flex items-center gap-3">
+                    <Package className="w-4 h-4 text-primary" /> Мои объявления
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/reservations?tab=history" className="cursor-pointer flex items-center gap-2 font-medium">
-                    <ShoppingBag className="w-4 h-4" /> Мои покупки
+                <DropdownMenuItem asChild className="rounded-xl cursor-pointer p-3 font-bold">
+                  <Link href="/reservations?tab=history" className="flex items-center gap-3">
+                    <ShoppingBag className="w-4 h-4 text-primary" /> Мои покупки
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/sales" className="cursor-pointer flex items-center gap-2 font-medium">
-                    <History className="w-4 h-4" /> Мои продажи
+                <DropdownMenuItem asChild className="rounded-xl cursor-pointer p-3 font-bold">
+                  <Link href="/sales" className="flex items-center gap-3">
+                    <History className="w-4 h-4 text-primary" /> Мои продажи
                   </Link>
                 </DropdownMenuItem>
-                {isSuperAdmin && (
-                  <DropdownMenuItem asChild className="rounded-xl text-rose-600 font-bold">
-                    <Link href="/admin" className="cursor-pointer flex items-center gap-2">
+                {isAdmin && (
+                  <DropdownMenuItem asChild className="rounded-xl text-primary font-black uppercase p-3">
+                    <Link href="/admin" className="flex items-center gap-3">
                       <ShieldAlert className="w-4 h-4" /> Админ-панель
                     </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
-                  <LogOut className="mr-2 h-4 w-4" />
+                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl font-black uppercase p-3">
+                  <LogOut className="mr-3 h-4 w-4" />
                   <span>Выйти</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : pathname !== '/auth' ? (
             <Link href="/auth">
-              <Button size="sm" className="rounded-xl px-5 font-bold uppercase tracking-tight shadow-md">
+              <Button size="sm" className="rounded-xl px-6 font-black uppercase tracking-tight shadow-lg shadow-primary/20">
                 Войти
               </Button>
             </Link>

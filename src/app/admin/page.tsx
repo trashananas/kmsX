@@ -14,14 +14,14 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Users, ShieldAlert, Globe, RefreshCw, Trash2, UploadCloud, X, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Users, ShieldAlert, Globe, RefreshCw, Trash2, UploadCloud, ShieldCheck } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const SUPER_ADMIN_EMAIL = "kjbdnlf@gmail.com";
 
@@ -34,29 +34,25 @@ export default function AdminPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isSavingBranding, setIsSavingBranding] = useState(false);
 
-  // Загружаем профиль текущего пользователя для проверки роли
   const currentUserRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: currentUserProfile } = useDoc(currentUserRef as any);
 
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL || currentUserProfile?.role === 'super_admin';
   const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin';
 
-  // Права доступа
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/auth');
       return;
     }
-    if (!isUserLoading && user && !isAdmin && user.email !== SUPER_ADMIN_EMAIL) {
+    if (!isUserLoading && user && !isAdmin) {
       router.push('/items');
     }
   }, [user, isUserLoading, isAdmin, router]);
 
-  // Загружаем настройки брендинга
   const brandingRef = useMemoFirebase(() => doc(firestore, 'settings', 'branding'), [firestore]);
   const { data: branding } = useDoc(brandingRef as any);
 
-  // Загружаем всех пользователей
   const usersQuery = useMemoFirebase(() => collection(firestore, 'users'), [firestore]);
   const { data: allUsers, isLoading: loadingUsers } = useCollection(usersQuery);
 
@@ -86,7 +82,7 @@ export default function AdminPage() {
         updatedAt: new Date().toISOString(),
         updatedBy: user?.uid
       }, { merge: true });
-      toast({ title: "Брендинг обновлен", description: "Логотип и иконка изменены во всем приложении." });
+      toast({ title: "Брендинг обновлен", description: "Логотип изменен во всем приложении." });
     } catch (e) {
       toast({ variant: "destructive", title: "Ошибка", description: "Не удалось сохранить настройки." });
     } finally {
@@ -107,7 +103,7 @@ export default function AdminPage() {
     toast({ title: "Роль обновлена", description: `Установлена роль: ${newRole}` });
   };
 
-  if (isUserLoading || !user || (!isAdmin && user.email !== SUPER_ADMIN_EMAIL)) {
+  if (isUserLoading || !user || !isAdmin) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
@@ -118,7 +114,7 @@ export default function AdminPage() {
   return (
     <div className="container max-w-6xl px-4 py-12 mx-auto flex-1 space-y-10">
       <div className="flex items-center gap-4 mb-2">
-        <div className="w-16 h-16 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200">
+        <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
           <ShieldAlert className="w-10 h-10" />
         </div>
         <div>
@@ -128,19 +124,19 @@ export default function AdminPage() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-14 rounded-2xl bg-muted/50 p-1 mb-8">
+        <TabsList className="grid w-full grid-cols-2 h-14 rounded-2xl bg-muted/50 p-1 mb-8 border">
           <TabsTrigger value="users" className="rounded-xl font-bold uppercase text-xs">Участники</TabsTrigger>
           <TabsTrigger value="branding" className="rounded-xl font-bold uppercase text-xs">Брендинг</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
           <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white">
-            <CardHeader className="bg-muted/50 p-8">
+            <CardHeader className="bg-muted/30 p-8">
               <CardTitle className="flex items-center gap-3">
                 <Users className="w-5 h-5 text-primary" />
                 Участники kmsX
               </CardTitle>
-              <CardDescription>Управление ролями и просмотр базы</CardDescription>
+              <CardDescription>Управление ролями и просмотр базы пользователей</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {loadingUsers ? (
@@ -150,42 +146,40 @@ export default function AdminPage() {
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader className="bg-muted/30">
+                    <TableHeader className="bg-muted/10">
                       <TableRow>
-                        <TableHead className="font-bold uppercase text-[10px] tracking-widest pl-8">Имя / Email</TableHead>
-                        <TableHead className="font-bold uppercase text-[10px] tracking-widest">UID</TableHead>
+                        <TableHead className="font-bold uppercase text-[10px] tracking-widest pl-8">Участник</TableHead>
                         <TableHead className="font-bold uppercase text-[10px] tracking-widest">Роль</TableHead>
-                        <TableHead className="font-bold uppercase text-[10px] tracking-widest pr-8 text-right">Действия</TableHead>
+                        <TableHead className="font-bold uppercase text-[10px] tracking-widest pr-8 text-right">Управление</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {allUsers?.map((u) => (
-                        <TableRow key={u.id} className="hover:bg-muted/20">
+                        <TableRow key={u.id} className="hover:bg-muted/5 border-none">
                           <TableCell className="pl-8 py-4">
                             <div className="font-bold">{u.username || 'Без имени'}</div>
                             <div className="text-xs text-muted-foreground">{u.email}</div>
                           </TableCell>
-                          <TableCell className="font-mono text-[10px] opacity-50">{u.id}</TableCell>
                           <TableCell>
                             {isSuperAdmin ? (
                               <Select defaultValue={u.role || 'user'} onValueChange={(val) => handleRoleChange(u.id, val)}>
-                                <SelectTrigger className="w-[150px] h-9 rounded-lg">
+                                <SelectTrigger className="w-[160px] h-10 rounded-xl bg-muted/30 border-none font-bold">
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="rounded-xl">
                                   <SelectItem value="user">Участник</SelectItem>
                                   <SelectItem value="admin">Админ</SelectItem>
                                   <SelectItem value="super_admin">Супер-админ</SelectItem>
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <Badge variant="outline" className="capitalize">
+                              <Badge variant="outline" className="capitalize px-3 py-1 rounded-lg">
                                 {u.role === 'super_admin' ? 'Супер-админ' : u.role === 'admin' ? 'Админ' : 'Участник'}
                               </Badge>
                             )}
                           </TableCell>
                           <TableCell className="pr-8 text-right">
-                             <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 rounded-lg">
+                             <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 rounded-xl h-10 w-10 p-0">
                                <Trash2 className="w-4 h-4" />
                              </Button>
                           </TableCell>
@@ -201,12 +195,12 @@ export default function AdminPage() {
 
         <TabsContent value="branding">
           <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white max-w-2xl mx-auto">
-            <CardHeader className="bg-muted/50 p-8">
+            <CardHeader className="bg-muted/30 p-8">
               <CardTitle className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-primary" />
                 Настройки брендинга
               </CardTitle>
-              <CardDescription>Логотип обновится везде: от шапки до иконки вкладки</CardDescription>
+              <CardDescription>Логотип обновится во всем приложении мгновенно</CardDescription>
             </CardHeader>
             <CardContent className="p-10 space-y-8 text-center">
               <div className="flex flex-col items-center gap-6">
@@ -223,31 +217,31 @@ export default function AdminPage() {
                   className="relative group cursor-pointer"
                 >
                   {logoPreview ? (
-                    <div className="relative w-48 h-48 rounded-[3rem] border-4 border-white shadow-2xl overflow-hidden">
+                    <div className="relative w-56 h-56 rounded-[3.5rem] border-4 border-white shadow-2xl overflow-hidden">
                       <img src={logoPreview} alt="Logo" className="object-cover w-full h-full" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <UploadCloud className="w-10 h-10 text-white" />
+                        <UploadCloud className="w-12 h-12 text-white" />
                       </div>
                     </div>
                   ) : (
-                    <div className="w-48 h-48 border-4 border-dashed border-muted rounded-[3rem] flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-all bg-muted/20">
-                      <UploadCloud className="w-12 h-12" />
-                      <span className="text-xs font-bold uppercase">Загрузить</span>
+                    <div className="w-56 h-56 border-4 border-dashed border-muted rounded-[3.5rem] flex flex-col items-center justify-center gap-3 text-muted-foreground hover:border-primary hover:text-primary transition-all bg-muted/20">
+                      <UploadCloud className="w-14 h-14" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Загрузить логотип</span>
                     </div>
                   )}
                 </div>
 
                 <div className="max-w-sm">
-                  <p className="text-sm text-muted-foreground font-medium">
-                    Нажмите на область выше, чтобы выбрать файл из проводника. 
-                    После выбора нажмите кнопку ниже для сохранения.
+                  <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                    Нажмите на область выше, чтобы выбрать файл логотипа. 
+                    После выбора нажмите кнопку ниже для сохранения изменений.
                   </p>
                 </div>
               </div>
 
               <Button 
                 onClick={handleSaveBranding} 
-                className="w-full h-14 rounded-2xl bg-primary font-bold uppercase tracking-tight shadow-lg shadow-primary/20"
+                className="w-full h-16 rounded-2xl bg-primary text-xl font-black uppercase tracking-tight shadow-xl shadow-primary/20"
                 disabled={isSavingBranding || !logoPreview}
               >
                 {isSavingBranding ? "Сохранение..." : "Применить везде"}

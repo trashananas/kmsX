@@ -39,7 +39,6 @@ export default function AuthPage() {
       let message = "Не удалось войти. Проверьте данные.";
       if (err.code === 'auth/invalid-email') message = "Некорректный адрес почты.";
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') message = "Неверный логин или пароль.";
-      
       toast({ variant: "destructive", title: "Ошибка", description: message });
     } finally {
       setLoading(false);
@@ -59,7 +58,6 @@ export default function AuthPage() {
       if (err.code === 'auth/invalid-email') message = "Некорректный адрес почты.";
       if (err.code === 'auth/email-already-in-use') message = "Этот email уже занят.";
       if (err.code === 'auth/weak-password') message = "Слишком простой пароль (минимум 6 символов).";
-      
       toast({ variant: "destructive", title: "Ошибка", description: message });
     } finally {
       setLoading(false);

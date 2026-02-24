@@ -30,7 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
@@ -73,7 +73,10 @@ export default function CategoriesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
 
-  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
+  const currentUserRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: currentUserProfile } = useDoc(currentUserRef as any);
+
+  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL || currentUserProfile?.role === 'super_admin';
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -175,14 +178,14 @@ export default function CategoriesPage() {
         <div className="flex gap-4">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="rounded-2xl h-14 px-8 gap-3 shadow-xl shadow-primary/20 text-lg">
+              <Button className="rounded-2xl h-14 px-8 gap-3 shadow-xl shadow-primary/20 text-lg font-bold">
                 <Plus className="w-6 h-6" />
                 Своя категория
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] rounded-[2.5rem] p-8">
+            <DialogContent className="sm:max-w-[425px] rounded-[2.5rem] p-8 border-none shadow-2xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl">Новая категория</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">Новая категория</DialogTitle>
                 <DialogDescription>
                   Введите название для нового раздела kmsX.
                 </DialogDescription>
@@ -190,7 +193,7 @@ export default function CategoriesPage() {
               <form onSubmit={handleAddCategory}>
                 <div className="grid gap-6 py-6">
                   <div className="space-y-3">
-                    <Label htmlFor="cat-name">Название</Label>
+                    <Label htmlFor="cat-name" className="font-bold">Название</Label>
                     <Input 
                       id="cat-name" 
                       placeholder="Например, Антиквариат или Растения" 
@@ -215,7 +218,7 @@ export default function CategoriesPage() {
               variant="outline" 
               onClick={seedCategories} 
               disabled={isSeeding}
-              className="rounded-2xl h-14 px-8 gap-3"
+              className="rounded-2xl h-14 px-8 gap-3 border-primary/20 text-primary font-bold"
             >
               <RefreshCw className={`w-5 h-5 ${isSeeding ? 'animate-spin' : ''}`} />
               Стандартные
@@ -251,7 +254,7 @@ export default function CategoriesPage() {
                   <Button 
                     variant="destructive" 
                     size="icon" 
-                    className="absolute -top-2 -right-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                     onClick={(e) => handleDeleteCategory(e, cat.id)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -266,7 +269,7 @@ export default function CategoriesPage() {
           <PackageSearch className="w-16 h-16 text-muted-foreground/20 mx-auto mb-6" />
           <h2 className="text-2xl font-bold mb-3">Категории не созданы</h2>
           <p className="text-muted-foreground mb-10 max-w-sm mx-auto">kmsX еще пуст. Начните с восстановления стандартных разделов.</p>
-          <Button variant="outline" onClick={seedCategories} disabled={isSeeding} className="rounded-2xl h-14 px-10 text-lg">
+          <Button variant="outline" onClick={seedCategories} disabled={isSeeding} className="rounded-2xl h-14 px-10 text-lg font-bold">
             <RefreshCw className={`mr-3 w-5 h-5 ${isSeeding ? 'animate-spin' : ''}`} />
             Восстановить стандартные
           </Button>

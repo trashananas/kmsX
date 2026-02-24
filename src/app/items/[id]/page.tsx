@@ -182,7 +182,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
 
       <div className={`flex flex-col md:flex-row gap-12 bg-white p-8 rounded-[2.5rem] shadow-sm border ${isSoldOut ? 'border-destructive/50' : ''}`}>
         <div className="w-full md:w-1/2">
-          <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
+          <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg bg-muted/20">
             <Image 
               src={item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/800'} 
               alt={item.title} 
@@ -201,10 +201,10 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1">{category?.name || 'Разное'}</Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-3 py-1 font-bold">{category?.name || 'Разное'}</Badge>
               {isOwner && (
                 <Link href={`/items/${id}/edit`}>
-                  <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-primary font-bold">
+                  <Button variant="outline" size="sm" className="rounded-xl gap-2 border-primary/20 text-primary font-bold">
                     <Pencil className="w-4 h-4" />
                     Изменить
                   </Button>
@@ -213,8 +213,8 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
             </div>
             <h1 className="text-4xl font-headline font-bold mb-2 leading-tight">{item.title}</h1>
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-primary">{item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}</span>
-              <Badge variant="outline" className="rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground">
+              <span className="text-3xl font-black text-primary">{item.price > 0 ? `${item.price} ₽` : 'Бесплатно'}</span>
+              <Badge variant="outline" className="rounded-lg gap-1.5 border-muted-foreground/20 text-muted-foreground font-bold">
                 <Package className="w-3.5 h-3.5" /> В наличии: {availableQuantity} шт.
               </Badge>
             </div>
@@ -234,19 +234,19 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className="p-6 bg-muted/30 rounded-2xl border border-dashed mb-10">
-            <h3 className="font-bold mb-3 flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Описание</h3>
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{item.description}</p>
+            <h3 className="font-bold mb-3 flex items-center gap-2 text-primary"><Tag className="w-4 h-4" /> Описание</h3>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">{item.description}</p>
           </div>
 
           <div className="mt-auto flex gap-4">
             {isOwner ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="flex-1 h-14 rounded-xl text-lg font-bold shadow-lg shadow-destructive/20">Удалить объявление</Button>
+                  <Button variant="destructive" className="flex-1 h-14 rounded-2xl text-lg font-black uppercase tracking-tight shadow-lg shadow-destructive/20">Удалить объявление</Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-[2rem]">
+                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
+                    <AlertDialogTitle className="text-2xl">Удалить объявление?</AlertDialogTitle>
                     <AlertDialogDescription>Это действие необратимо. Вещь исчезнет из каталога.</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -258,17 +258,17 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
             ) : (
               <Dialog open={isReserveOpen} onOpenChange={setIsReserveOpen}>
                 <DialogTrigger asChild>
-                  <Button className="flex-1 h-14 rounded-xl text-lg font-bold shadow-lg shadow-primary/20" disabled={isSoldOut}>
+                  <Button className="flex-1 h-16 rounded-2xl text-xl font-black uppercase tracking-tight shadow-xl shadow-primary/20" disabled={isSoldOut}>
                     {isSoldOut ? 'Закончился' : 'Забронировать'}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="rounded-[2rem]">
-                  <DialogHeader><DialogTitle>Бронирование</DialogTitle></DialogHeader>
+                <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
+                  <DialogHeader><DialogTitle className="text-2xl font-bold">Бронирование</DialogTitle></DialogHeader>
                   <div className="py-6">
-                    <Label>Количество</Label>
-                    <Input type="number" min="1" max={availableQuantity} value={reserveCount} onChange={(e) => setReserveCount(parseInt(e.target.value))} className="h-12 rounded-xl mt-2" />
+                    <Label className="font-bold">Количество</Label>
+                    <Input type="number" min="1" max={availableQuantity} value={reserveCount} onChange={(e) => setReserveCount(parseInt(e.target.value))} className="h-14 rounded-xl mt-2 bg-muted/20 border-none text-lg font-bold px-6" />
                   </div>
-                  <DialogFooter><Button onClick={handleReserve} className="w-full h-14 rounded-xl font-bold">Подтвердить и начать чат</Button></DialogFooter>
+                  <DialogFooter><Button onClick={handleReserve} className="w-full h-16 rounded-2xl font-black uppercase text-lg shadow-lg shadow-primary/20">Подтвердить и начать чат</Button></DialogFooter>
                 </DialogContent>
               </Dialog>
             )}
@@ -276,11 +276,11 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-14 w-14 rounded-xl border-2"
+                className="h-16 w-16 rounded-2xl border-2 border-primary/20 text-primary hover:bg-primary/5 shadow-md"
                 onClick={getOrCreateChat}
                 disabled={isChatLoading}
               >
-                <MessageCircle className={`w-6 h-6 ${isChatLoading ? 'animate-pulse' : ''}`} />
+                <MessageCircle className={`w-8 h-8 ${isChatLoading ? 'animate-pulse' : ''}`} />
               </Button>
             )}
           </div>

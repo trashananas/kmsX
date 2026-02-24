@@ -23,10 +23,6 @@ const MOCK_ITEMS_DATA = [
   { title: "Кресло IKEA", categoryName: "Мебель", condition: "Среднее", description: "Удобное кресло, есть небольшие потертости.", price: 1500 },
   { title: "LEGO Star Wars", categoryName: "Игрушки", condition: "Новое", description: "Запечатанная коробка.", price: 8000 },
   { title: "Горный велосипед", categoryName: "Спорт", condition: "Хорошее", description: "21 скорость, дисковые тормоза.", price: 12000 },
-  { title: "iPhone 12", categoryName: "Электроника", condition: "Как новое", description: "Без сколов и царапин.", price: 35000 },
-  { title: "Свитер шерстяной", categoryName: "Одежда", condition: "Хорошее", description: "Очень теплый, ручная вязка.", price: 0 },
-  { title: "Гитара акустическая", categoryName: "Электроника", condition: "Хорошее", description: "Звучит отлично, новые струны.", price: 5000 },
-  { title: "Набор посуды", categoryName: "Мебель", condition: "Новое", description: "Комплект на 6 персон.", price: 0 },
 ];
 
 function BrowseItemsContent() {
@@ -34,7 +30,7 @@ function BrowseItemsContent() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const [showOnlyFree, setShowOnlyFree] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
-  const [activeMineTab, setActiveMineTab] = useState('active'); // 'active' | 'archive'
+  const [activeMineTab, setActiveMineTab] = useState('active');
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
@@ -54,9 +50,6 @@ function BrowseItemsContent() {
 
     if (showOnlyMine) {
       q = query(baseRef, where('ownerId', '==', user.uid));
-      if (selectedCategoryId !== 'all' && selectedCategoryId !== 'archive') {
-        q = query(q, where('categoryId', '==', selectedCategoryId));
-      }
     } else if (selectedCategoryId === 'archive') {
       q = query(baseRef, where('quantity', '==', 0));
     } else {
@@ -119,10 +112,8 @@ function BrowseItemsContent() {
     setIsSeeding(true);
     try {
       const listingsRef = collection(firestore, 'item_listings');
-      
       for (const mock of MOCK_ITEMS_DATA) {
         const category = categories.find(c => c.name === mock.categoryName) || categories[0];
-        
         addDocumentNonBlocking(listingsRef, {
           title: mock.title,
           description: mock.description,
@@ -135,23 +126,13 @@ function BrowseItemsContent() {
           status: 'available',
           imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/800`],
           locationName: "Москва",
-          latitude: 55.7558,
-          longitude: 37.6173,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
       }
-
-      toast({
-        title: "kmsX: Данные добавлены",
-        description: "10 объявлений успешно созданы для теста.",
-      });
+      toast({ title: "kmsX: Тестовые данные добавлены" });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Не удалось добавить тестовые данные.",
-      });
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось добавить данные." });
     } finally {
       setIsSeeding(false);
     }
@@ -173,7 +154,7 @@ function BrowseItemsContent() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
               placeholder="Что ищем в kmsX?" 
-              className="pl-11 h-12 bg-muted/30 border-none rounded-2xl"
+              className="pl-11 h-12 bg-muted/30 border-none rounded-2xl font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -184,14 +165,14 @@ function BrowseItemsContent() {
               checked={showOnlyFree} 
               onCheckedChange={setShowOnlyFree}
             />
-            <Label htmlFor="free-mode" className="text-sm font-medium whitespace-nowrap cursor-pointer">Бесплатно</Label>
+            <Label htmlFor="free-mode" className="text-sm font-bold whitespace-nowrap cursor-pointer uppercase">Бесплатно</Label>
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="w-full lg:w-64 shrink-0">
             <div className="sticky top-24">
-              <h2 className="text-xl font-bold mb-6 px-2">Разделы</h2>
+              <h2 className="text-xl font-bold mb-6 px-2 uppercase tracking-tight">Разделы</h2>
               <CategoryFilter 
                 selectedId={selectedCategoryId} 
                 onSelect={handleCategorySelect} 
@@ -201,38 +182,25 @@ function BrowseItemsContent() {
 
           <div className="flex-1">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-bold font-headline tracking-tight">
+              <h1 className="text-3xl font-black font-headline tracking-tight uppercase italic">
                 {showOnlyMine ? (
                    activeMineTab === 'active' ? 'Мои вещи' : 'Мой архив'
                 ) : (
                    selectedCategoryId === 'all' ? 'Все вещи' : 
                    selectedCategoryId === 'archive' ? 'Архив kmsX' : 'Результаты'
                 )}
-                {showOnlyFree && !showOnlyMine && <span className="text-accent ml-2 text-lg">(Бесплатно)</span>}
                 {!isLoading && <span className="text-muted-foreground font-normal text-lg ml-3">({filteredItems.length})</span>}
               </h1>
-              {filteredItems.length === 0 && !isLoading && !showOnlyMine && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={seedMockItems} 
-                  disabled={isSeeding}
-                  className="rounded-xl gap-2 border-primary/20 text-primary"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
-                  Тестовые данные
-                </Button>
-              )}
             </div>
 
             {showOnlyMine && (
               <Tabs value={activeMineTab} onValueChange={setActiveMineTab} className="mb-8 w-full sm:w-fit">
-                <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/50 p-1 rounded-xl">
-                  <TabsTrigger value="active" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm px-6">
+                <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/50 p-1 rounded-xl border">
+                  <TabsTrigger value="active" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 uppercase text-xs">
                     В продаже
                   </TabsTrigger>
-                  <TabsTrigger value="archive" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm px-6">
-                    Архив (0 шт.)
+                  <TabsTrigger value="archive" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 uppercase text-xs">
+                    Архив
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -265,13 +233,13 @@ function BrowseItemsContent() {
                   {selectedCategoryId === 'archive' ? <Archive className="w-12 h-12 text-muted-foreground/30" /> : <PackageOpen className="w-12 h-12 text-muted-foreground/30" />}
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Ничего не найдено</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8">
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-medium">
                   {selectedCategoryId === 'archive' ? "В архиве kmsX пока пусто." : "Будьте первым, кто предложит вещь в этом разделе!"}
                 </p>
                 {!showOnlyMine && selectedCategoryId !== 'archive' && (
-                  <Button variant="outline" onClick={seedMockItems} disabled={isSeeding} className="rounded-2xl h-12 px-8">
+                  <Button variant="outline" onClick={seedMockItems} disabled={isSeeding} className="rounded-2xl h-14 px-8 border-primary/20 text-primary font-bold">
                     <RefreshCw className={`mr-2 w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
-                    Добавить 10 тестовых объявлений
+                    Добавить тестовые данные
                   </Button>
                 )}
               </div>
