@@ -212,18 +212,6 @@ export default function CategoriesPage() {
               </form>
             </DialogContent>
           </Dialog>
-
-          {(isSuperAdmin || (categories && categories.length === 0)) && (
-            <Button 
-              variant="outline" 
-              onClick={seedCategories} 
-              disabled={isSeeding}
-              className="rounded-2xl h-14 px-8 gap-3 border-primary/20 text-primary font-bold"
-            >
-              <RefreshCw className={`w-5 h-5 ${isSeeding ? 'animate-spin' : ''}`} />
-              Стандартные
-            </Button>
-          )}
         </div>
       </div>
 
