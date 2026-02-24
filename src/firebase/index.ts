@@ -15,13 +15,10 @@ export function initializeFirebase() {
     let firebaseApp;
     try {
       // Attempt to initialize via Firebase App Hosting environment variables
+      // If we are on a non-Firebase host, this will likely throw, and we fall back to config object.
       firebaseApp = initializeApp();
     } catch (e) {
-      // Only warn in production because it's normal to use the firebaseConfig to initialize
-      // during development
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
+      // Normal fallback for development or non-Firebase hosting providers like Render/Vercel
       firebaseApp = initializeApp(firebaseConfig);
     }
 
