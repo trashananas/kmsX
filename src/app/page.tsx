@@ -22,11 +22,11 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden">
-        {/* Мягкий фоновый градиент */}
+        {/* Мягкий фоновый градиент с плавным переходом */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background pointer-events-none" />
         
         <div className="container px-4 text-center z-10 py-20 animate-in fade-in zoom-in duration-1000">
-          <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-12 shadow-2xl rounded-[4rem] overflow-hidden border-8 border-white bg-white">
+          <div className="relative w-64 h-64 md:w-96 md:h-96 mx-auto mb-12 shadow-2xl rounded-[4rem] overflow-hidden border-8 border-white bg-white">
             <Image 
               src={logoUrl} 
               alt="Клуб логотип" 
@@ -35,12 +35,10 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-5xl md:text-8xl font-headline font-black mb-6 tracking-tighter uppercase">
+          <h1 className="text-5xl md:text-8xl font-headline font-black mb-12 tracking-tighter uppercase">
             Встречайте <span className="text-primary italic">kmsX</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 font-medium leading-relaxed italic">
-            Клуб многодетных семей Выхино-Жулебино: современный способ обмениваться вещами с соседями. Безопасно, удобно и честно.
-          </p>
+          
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             {user ? (
               <Link href="/items">
