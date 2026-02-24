@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History, Zap } from 'lucide-react';
+import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
-  { label: 'X-Tok', href: '/swipe', icon: Zap },
   { label: 'Категории', href: '/categories', icon: Layers },
 ];
 
