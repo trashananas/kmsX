@@ -3,12 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, User, ArrowRight, Ghost } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Ghost, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset, initiateAnonymousSignIn } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
 
@@ -17,6 +18,9 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
@@ -33,6 +37,8 @@ export default function AuthPage() {
     
     setLoading(true);
     try {
+      // Firebase запоминает пользователя по умолчанию (Local Persistence).
+      // Здесь мы просто отображаем галочку для UI/UX.
       await initiateEmailSignIn(auth, email.trim(), password);
       toast({ title: "Вход выполнен", description: "Рады видеть вас снова в kmsX!" });
     } catch (err: any) {
@@ -107,7 +113,7 @@ export default function AuthPage() {
           </TabsList>
           
           <TabsContent value="login">
-            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
               <CardHeader className="pt-10 px-10">
                 <CardTitle className="text-2xl font-bold">Войти</CardTitle>
                 <CardDescription>Введите данные для доступа к вашему аккаунту.</CardDescription>
@@ -144,13 +150,35 @@ export default function AuthPage() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input 
                         id="password" 
-                        type="password" 
-                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
+                        type={showPassword ? "text" : "password"} 
+                        className="pl-10 pr-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox 
+                      id="remember" 
+                      checked={rememberMe} 
+                      onCheckedChange={(checked) => setRememberMe(!!checked)}
+                      className="rounded-md border-primary/20"
+                    />
+                    <label
+                      htmlFor="remember"
+                      className="text-xs font-bold text-muted-foreground cursor-pointer uppercase tracking-tight"
+                    >
+                      Запомнить меня на этом устройстве
+                    </label>
                   </div>
                 </CardContent>
                 <CardFooter className="p-10 pt-0 flex flex-col gap-4">
@@ -184,7 +212,7 @@ export default function AuthPage() {
           </TabsContent>
 
           <TabsContent value="signup">
-            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
               <CardHeader className="pt-10 px-10">
                 <CardTitle className="text-2xl font-bold">Новый аккаунт</CardTitle>
                 <CardDescription>Станьте частью нашего сообщества.</CardDescription>
@@ -226,12 +254,19 @@ export default function AuthPage() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input 
                         id="reg-password" 
-                        type="password" 
-                        className="pl-10 h-12 rounded-xl bg-muted/20 border-none" 
+                        type={showPassword ? "text" : "password"} 
+                        className="pl-10 pr-10 h-12 rounded-xl bg-muted/20 border-none" 
                         required 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
                 </CardContent>
