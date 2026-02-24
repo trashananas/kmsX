@@ -32,6 +32,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
   const { data: item, isLoading: isItemLoading } = useDoc(itemRef as any);
 
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -44,7 +45,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
   });
 
   useEffect(() => {
-    if (item) {
+    if (item && !isInitialized) {
       setFormData({
         title: item.title || '',
         description: item.description || '',
@@ -57,8 +58,9 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
       if (item.imageUrls?.[0]) {
         setPreviewImage(item.imageUrls[0]);
       }
+      setIsInitialized(true);
     }
-  }, [item]);
+  }, [item, isInitialized]);
 
   const categoriesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -138,7 +140,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
     }
   };
 
-  if (isItemLoading) return <div className="container p-20 text-center">Загрузка...</div>;
+  if (isItemLoading && !isInitialized) return <div className="container p-20 text-center">Загрузка...</div>;
 
   return (
     <div className="container px-4 py-8 max-w-2xl mx-auto">

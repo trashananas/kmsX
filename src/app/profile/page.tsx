@@ -52,8 +52,6 @@ export default function ProfileSettingsPage() {
 
   const handleSave = () => {
     if (!userRef) return;
-    // Используем setDocumentNonBlocking с merge: true вместо update, 
-    // чтобы создать документ, если он еще не существует
     setDocumentNonBlocking(userRef as any, {
       ...formData,
       updatedAt: new Date().toISOString()
