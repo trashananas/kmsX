@@ -5,10 +5,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, LayoutGrid, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History } from 'lucide-react';
+import { PlusCircle, Compass, LayoutGrid, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useUser, useAuth, logOut } from '@/firebase';
+import { useUser, useAuth, logOut, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+const SUPER_ADMIN_EMAIL = "kjbdnlf@gmail.com";
+
 const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
   { label: 'Категории', href: '/categories', icon: LayoutGrid },
@@ -28,11 +31,15 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const [mounted, setMounted] = useState(false);
 
-  const logoImg = PlaceHolderImages.find(img => img.id === 'logo');
+  const brandingRef = useMemoFirebase(() => doc(firestore, 'settings', 'branding'), [firestore]);
+  const { data: branding } = useDoc(brandingRef as any);
+
+  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
 
   useEffect(() => {
     setMounted(true);
@@ -42,6 +49,8 @@ export default function Navbar() {
     await logOut(auth);
     router.push('/auth');
   };
+
+  const logoUrl = branding?.logoUrl || PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '/logo.png';
 
   if (!mounted) return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b h-16" />
@@ -53,11 +62,10 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 group">
           <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-110">
             <Image 
-              src={logoImg?.imageUrl || '/logo.png'} 
+              src={logoUrl} 
               alt="Logo" 
               fill 
               className="object-cover"
-              data-ai-hint="family logo"
             />
           </div>
           <span className="font-headline font-black text-2xl tracking-tighter text-primary uppercase">kmsX</span>
@@ -88,6 +96,18 @@ export default function Navbar() {
               <Heart className="w-4 h-4" />
               Лайки
             </Link>
+            {isSuperAdmin && (
+              <Link 
+                href="/admin"
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-bold transition-colors text-rose-600 hover:text-rose-700 uppercase tracking-wide",
+                  pathname === '/admin' ? "text-rose-600" : "text-rose-600/70"
+                )}
+              >
+                <ShieldAlert className="w-4 h-4" />
+                Админ
+              </Link>
+            )}
           </div>
         )}
 
@@ -163,6 +183,13 @@ export default function Navbar() {
                     <History className="w-4 h-4" /> Мои продажи
                   </Link>
                 </DropdownMenuItem>
+                {isSuperAdmin && (
+                  <DropdownMenuItem asChild className="rounded-xl text-rose-600 font-bold">
+                    <Link href="/admin" className="cursor-pointer flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4" /> Админ-панель
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
                   <LogOut className="mr-2 h-4 w-4" />

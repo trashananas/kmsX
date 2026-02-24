@@ -13,7 +13,8 @@ import {
   LayoutGrid,
   PackageSearch,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,10 +30,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+
+const SUPER_ADMIN_EMAIL = "kjbdnlf@gmail.com";
 
 const ICON_MAP: Record<string, any> = {
   'Одежда': Shirt,
@@ -69,6 +72,8 @@ export default function CategoriesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+
+  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -110,6 +115,16 @@ export default function CategoriesPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDeleteCategory = (e: React.MouseEvent, categoryId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isSuperAdmin) return;
+    
+    const catRef = doc(firestore, 'categories', categoryId);
+    deleteDocumentNonBlocking(catRef);
+    toast({ title: "Раздел удален" });
   };
 
   const seedCategories = async () => {
@@ -195,7 +210,7 @@ export default function CategoriesPage() {
             </DialogContent>
           </Dialog>
 
-          {categories && categories.length === 0 && (
+          {(isSuperAdmin || (categories && categories.length === 0)) && (
             <Button 
               variant="outline" 
               onClick={seedCategories} 
@@ -221,16 +236,28 @@ export default function CategoriesPage() {
             const Icon = ICON_MAP[cat.name] || LayoutGrid;
             const color = COLOR_MAP[cat.name] || 'bg-muted text-muted-foreground';
             return (
-              <Link key={cat.id} href={`/items?category=${cat.id}`}>
-                <Card className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group cursor-pointer h-full rounded-[2.5rem] bg-white overflow-hidden">
-                  <CardContent className="p-10 flex flex-col items-center text-center">
-                    <div className={`w-20 h-20 rounded-[1.5rem] ${color} flex items-center justify-center mb-8 group-hover:rotate-12 transition-transform shadow-sm`}>
-                      <Icon className="w-10 h-10" />
-                    </div>
-                    <h3 className="font-bold text-xl mb-1">{cat.name}</h3>
-                  </CardContent>
-                </Card>
-              </Link>
+              <div key={cat.id} className="relative group">
+                <Link href={`/items?category=${cat.id}`}>
+                  <Card className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group cursor-pointer h-full rounded-[2.5rem] bg-white overflow-hidden">
+                    <CardContent className="p-10 flex flex-col items-center text-center">
+                      <div className={`w-20 h-20 rounded-[1.5rem] ${color} flex items-center justify-center mb-8 group-hover:rotate-12 transition-transform shadow-sm`}>
+                        <Icon className="w-10 h-10" />
+                      </div>
+                      <h3 className="font-bold text-xl mb-1">{cat.name}</h3>
+                    </CardContent>
+                  </Card>
+                </Link>
+                {isSuperAdmin && (
+                  <Button 
+                    variant="destructive" 
+                    size="icon" 
+                    className="absolute -top-2 -right-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => handleDeleteCategory(e, cat.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             );
           })}
         </div>

@@ -5,12 +5,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Zap } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
   const { user } = useUser();
-  const logoImg = PlaceHolderImages.find(img => img.id === 'logo');
+  const firestore = useFirestore();
+  
+  const brandingRef = useMemoFirebase(() => doc(firestore, 'settings', 'branding'), [firestore]);
+  const { data: branding } = useDoc(brandingRef as any);
+
+  const logoUrl = branding?.logoUrl || PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '/logo.png';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -22,11 +28,10 @@ export default function Home() {
         <div className="container px-4 text-center z-10 py-20">
           <div className="relative w-32 h-32 mx-auto mb-10 shadow-2xl rounded-[2.5rem] overflow-hidden rotate-3 border-4 border-white bg-white">
             <Image 
-              src={logoImg?.imageUrl || 'https://picsum.photos/seed/kms-logo/400/400'} 
+              src={logoUrl} 
               alt="Клуб логотип" 
               fill 
               className="object-cover"
-              data-ai-hint="family logo"
             />
           </div>
           <h1 className="text-5xl md:text-7xl font-headline font-black mb-6 tracking-tighter uppercase">

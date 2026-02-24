@@ -96,6 +96,13 @@
           "schema": { "type": "object" },
           "description": "Item categories."
         }
+      },
+      {
+        "path": "/settings/branding",
+        "definition": {
+          "schema": { "type": "object" },
+          "description": "Global branding settings like logo."
+        }
       }
     ]
   }

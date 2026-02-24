@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider, useUser } from '@/firebase';
+import { FirebaseClientProvider, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -23,24 +24,40 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function DynamicFavicon() {
+  const firestore = useFirestore();
+  const brandingRef = useMemoFirebase(() => doc(firestore, 'settings', 'branding'), [firestore]);
+  const { data: branding } = useDoc(brandingRef as any);
+  
+  const logoUrl = branding?.logoUrl || PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '/logo.png';
+
+  useEffect(() => {
+    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (link) {
+      link.href = logoUrl;
+    }
+  }, [logoUrl]);
+
+  return null;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const logoImg = PlaceHolderImages.find(img => img.id === 'logo');
-
   return (
     <html lang="ru">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link rel="icon" href={logoImg?.imageUrl || '/logo.png'} />
+        <link rel="icon" href="/logo.png" />
         <title>kmsX | Современный обмен вещами</title>
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <FirebaseClientProvider>
+          <DynamicFavicon />
           <AuthGuard>
             <Navbar />
             <div className="pt-16 min-h-screen flex flex-col">
