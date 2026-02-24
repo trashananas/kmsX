@@ -10,18 +10,30 @@ import {
   useDoc, 
   useMemoFirebase, 
   setDocumentNonBlocking,
-  updateDocumentNonBlocking
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Users, ShieldAlert, Globe, RefreshCw, Trash2, UploadCloud, ShieldCheck } from 'lucide-react';
+import { Users, ShieldAlert, Globe, RefreshCw, Trash2, UploadCloud, Settings2, AlertTriangle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SUPER_ADMIN_EMAIL = "kjbdnlf@gmail.com";
 
@@ -33,6 +45,7 @@ export default function AdminPage() {
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isSavingBranding, setIsSavingBranding] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const currentUserRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: currentUserProfile } = useDoc(currentUserRef as any);
@@ -103,6 +116,23 @@ export default function AdminPage() {
     toast({ title: "Роль обновлена", description: `Установлена роль: ${newRole}` });
   };
 
+  const handleDeleteAllItems = async () => {
+    if (!isSuperAdmin) return;
+    setIsDeletingAll(true);
+    try {
+      const itemsRef = collection(firestore, 'item_listings');
+      const snapshot = await getDocs(itemsRef);
+      snapshot.forEach((itemDoc) => {
+        deleteDocumentNonBlocking(doc(firestore, 'item_listings', itemDoc.id));
+      });
+      toast({ title: "База очищена", description: "Все объявления успешно удалены." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Ошибка", description: "Не удалось удалить объявления." });
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
   if (isUserLoading || !user || !isAdmin) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -124,9 +154,10 @@ export default function AdminPage() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-14 rounded-2xl bg-muted/50 p-1 mb-8 border">
+        <TabsList className="grid w-full grid-cols-3 h-14 rounded-2xl bg-muted/50 p-1 mb-8 border">
           <TabsTrigger value="users" className="rounded-xl font-bold uppercase text-xs">Участники</TabsTrigger>
           <TabsTrigger value="branding" className="rounded-xl font-bold uppercase text-xs">Брендинг</TabsTrigger>
+          <TabsTrigger value="system" className="rounded-xl font-bold uppercase text-xs">Система</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -246,6 +277,67 @@ export default function AdminPage() {
               >
                 {isSavingBranding ? "Сохранение..." : "Применить везде"}
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="system">
+          <Card className="rounded-[2.5rem] border-none shadow-xl overflow-hidden bg-white max-w-2xl mx-auto">
+            <CardHeader className="bg-muted/30 p-8">
+              <CardTitle className="flex items-center gap-3">
+                <Settings2 className="w-5 h-5 text-primary" />
+                Системные настройки
+              </CardTitle>
+              <CardDescription>Критические действия с базой данных</CardDescription>
+            </CardHeader>
+            <CardContent className="p-10 space-y-8">
+              <div className="bg-rose-50 border border-rose-100 p-6 rounded-3xl flex gap-4">
+                <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-rose-600" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-rose-900 mb-1">Опасная зона</h4>
+                  <p className="text-sm text-rose-700 leading-relaxed">
+                    Удаление всех объявлений полностью очистит каталог kmsX. Это действие нельзя отменить.
+                  </p>
+                </div>
+              </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full h-16 rounded-2xl text-xl font-black uppercase tracking-tight shadow-xl shadow-destructive/20"
+                    disabled={!isSuperAdmin || isDeletingAll}
+                  >
+                    {isDeletingAll ? "Удаление..." : "Удалить все объявления"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-2xl font-bold text-rose-600">Вы абсолютно уверены?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-base">
+                      Это действие приведет к немедленному и безвозвратному удалению всех объявлений из базы данных. 
+                      Пользователи потеряют свои лоты и бронирования.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-6 gap-4">
+                    <AlertDialogCancel className="rounded-xl h-12 px-6 font-bold">Отмена</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteAllItems}
+                      className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl h-12 px-8 font-black uppercase tracking-tight"
+                    >
+                      Да, удалить всё
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {!isSuperAdmin && (
+                <p className="text-center text-xs text-muted-foreground font-bold uppercase tracking-widest">
+                  Только супер-администратор может выполнять эти действия
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
