@@ -12,11 +12,11 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function ReservationsPage() {
-  const { user } = userUser();
+function ReservationsContent() {
+  const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,13 +29,11 @@ export default function ReservationsPage() {
     setActiveTab(tabParam);
   }, [tabParam]);
 
-  // Активные брони из favorites
   const favoritesQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, 'users', user.uid, 'favorites'));
   }, [firestore, user]);
 
-  // История завершенных покупок из chats
   const historyQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
@@ -224,5 +222,13 @@ export default function ReservationsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><RefreshCw className="w-8 h-8 animate-spin text-primary" /></div>}>
+      <ReservationsContent />
+    </Suspense>
   );
 }

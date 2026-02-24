@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, PackageOpen, RefreshCw, Archive } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ const MOCK_ITEMS_DATA = [
   { title: "Набор посуды", categoryName: "Мебель", condition: "Новое", description: "Комплект на 6 персон.", price: 0 },
 ];
 
-export default function BrowseItems() {
+function BrowseItemsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const [showOnlyFree, setShowOnlyFree] = useState(false);
@@ -54,12 +54,10 @@ export default function BrowseItems() {
 
     if (showOnlyMine) {
       q = query(baseRef, where('ownerId', '==', user.uid));
-      // Если выбрана категория внутри "Моих объявлений"
       if (selectedCategoryId !== 'all' && selectedCategoryId !== 'archive') {
         q = query(q, where('categoryId', '==', selectedCategoryId));
       }
     } else if (selectedCategoryId === 'archive') {
-      // Глобальный архив - только закончившиеся вещи
       q = query(baseRef, where('quantity', '==', 0));
     } else {
       q = query(baseRef, where('status', '==', 'available'));
@@ -87,14 +85,12 @@ export default function BrowseItems() {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
-    // Если смотрим свои вещи, фильтруем по выбранной вкладке
     if (showOnlyMine) {
       const qty = item.quantity ?? 1;
       if (activeMineTab === 'active') return qty > 0;
       if (activeMineTab === 'archive') return qty <= 0;
     }
     
-    // Если обычный просмотр (не раздел Архива), скрываем проданное
     if (!showOnlyMine && selectedCategoryId !== 'archive') {
       const qty = item.quantity ?? 1;
       if (qty <= 0) return false;
@@ -105,7 +101,6 @@ export default function BrowseItems() {
 
   const handleCategorySelect = (id: string) => {
     setSelectedCategoryId(id);
-    // Если пользователь кликает "Глобальный архив" из режима "Мои объявления", выходим из этого режима
     if (id === 'archive' && showOnlyMine) {
       router.push('/items');
     }
@@ -135,7 +130,7 @@ export default function BrowseItems() {
           condition: mock.condition,
           price: mock.price,
           bank: mock.price > 0 ? "Сбер" : "",
-          quantity: Math.random() > 0.2 ? 1 : 0, // Некоторым ставим 0 для архива
+          quantity: Math.random() > 0.2 ? 1 : 0,
           ownerId: user.uid,
           status: 'available',
           imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/800`],
@@ -285,5 +280,13 @@ export default function BrowseItems() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BrowseItems() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><RefreshCw className="w-8 h-8 animate-spin text-primary" /></div>}>
+      <BrowseItemsContent />
+    </Suspense>
   );
 }
