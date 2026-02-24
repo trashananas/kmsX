@@ -4,31 +4,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Zap, MapPin, RefreshCw, Layers } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-
-const features = [
-  {
-    title: "Ищите рядом",
-    description: "Находите отличные вещи прямо в вашем районе Выхино-Жулебино.",
-    icon: MapPin,
-    color: "bg-blue-100 text-blue-600"
-  },
-  {
-    title: "Быстрый обмен",
-    description: "Договаривайтесь об обмене за считанные минуты.",
-    icon: RefreshCw,
-    color: "bg-emerald-100 text-emerald-600"
-  },
-  {
-    title: "Вторая жизнь",
-    description: "Дайте вещам вторую жизнь и получите то, что вам нужно бесплатно.",
-    icon: Layers,
-    color: "bg-orange-100 text-orange-600"
-  }
-];
 
 export default function Home() {
   const { user } = useUser();
@@ -75,27 +53,6 @@ export default function Home() {
         
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse delay-1000" />
-      </section>
-
-      {/* Features Grid */}
-      <section className="container px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-black mb-4 uppercase tracking-tight">Почему выбирают kmsX?</h2>
-          <p className="text-muted-foreground text-lg">Мы создали сообщество, где обмен вещами приносит радость</p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, i) => (
-            <Card key={i} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[3rem] bg-white p-6">
-              <CardContent className="pt-8 text-center">
-                <div className={`w-20 h-20 rounded-[2rem] ${feature.color} flex items-center justify-center mx-auto mb-8 shadow-inner`}>
-                  <feature.icon className="w-10 h-10" />
-                </div>
-                <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </section>
 
       {/* CTA Section */}
