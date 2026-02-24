@@ -2,6 +2,12 @@
 {
   "placeholderImages": [
     {
+      "id": "logo",
+      "description": "Клуб многодетных семей Выхино-Жулебино логотип",
+      "imageUrl": "https://picsum.photos/seed/kms-logo/400/400",
+      "imageHint": "family logo"
+    },
+    {
       "id": "clothes",
       "description": "Stylish jacket",
       "imageUrl": "https://picsum.photos/seed/clothes1/600/800",

@@ -1,12 +1,15 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History } from 'lucide-react';
+import { PlusCircle, Compass, LayoutGrid, User, LogOut, Heart, MessageSquare, Package, ShoppingBag, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +22,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navItems = [
   { label: 'Обзор', href: '/items', icon: Compass },
-  { label: 'Категории', href: '/categories', icon: Layers },
+  { label: 'Категории', href: '/categories', icon: LayoutGrid },
 ];
 
 export default function Navbar() {
@@ -28,6 +31,8 @@ export default function Navbar() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const [mounted, setMounted] = useState(false);
+
+  const logoImg = PlaceHolderImages.find(img => img.id === 'logo');
 
   useEffect(() => {
     setMounted(true);
@@ -46,10 +51,16 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center transition-transform group-hover:rotate-12">
-            <Layers className="text-white w-5 h-5" />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-110">
+            <Image 
+              src={logoImg?.imageUrl || '/logo.png'} 
+              alt="Logo" 
+              fill 
+              className="object-cover"
+              data-ai-hint="family logo"
+            />
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-primary">kmsX</span>
+          <span className="font-headline font-black text-2xl tracking-tighter text-primary uppercase">kmsX</span>
         </Link>
 
         {user && (
@@ -59,7 +70,7 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary",
+                  "flex items-center gap-1.5 text-sm font-bold transition-colors hover:text-primary uppercase tracking-wide",
                   pathname === item.href ? "text-primary" : "text-muted-foreground"
                 )}
               >
@@ -70,7 +81,7 @@ export default function Navbar() {
             <Link 
               href="/favorites"
               className={cn(
-                "flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary",
+                "flex items-center gap-1.5 text-sm font-bold transition-colors hover:text-primary uppercase tracking-wide",
                 pathname === '/favorites' ? "text-primary" : "text-muted-foreground"
               )}
             >
@@ -84,7 +95,7 @@ export default function Navbar() {
           {user && (
             <>
               <Link href="/items/new">
-                <Button className="hidden sm:flex gap-2 rounded-xl">
+                <Button className="hidden sm:flex gap-2 rounded-xl font-bold uppercase tracking-tight">
                   <PlusCircle className="w-4 h-4" />
                   Разместить
                 </Button>
@@ -95,7 +106,7 @@ export default function Navbar() {
 
               <div className="flex items-center gap-2">
                 <Link href="/chats">
-                  <Button variant="ghost" className="rounded-xl bg-accent/10 text-accent hover:bg-accent/20 font-bold gap-2 h-10 px-4">
+                  <Button variant="ghost" className="rounded-xl bg-accent/20 text-accent-foreground hover:bg-accent/30 font-bold gap-2 h-10 px-4">
                     <MessageSquare className="w-4 h-4" />
                     <span className="hidden sm:inline">Чаты</span>
                   </Button>
@@ -125,7 +136,7 @@ export default function Navbar() {
               <DropdownMenuContent className="w-56 rounded-2xl p-2" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal px-2 py-2">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Профиль</p>
+                    <p className="text-sm font-bold leading-none uppercase">Профиль</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
                     </p>
@@ -133,27 +144,27 @@ export default function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/profile" className="cursor-pointer flex items-center gap-2">
+                  <Link href="/profile" className="cursor-pointer flex items-center gap-2 font-medium">
                     <User className="w-4 h-4" /> Настройки профиля
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/items?owner=me" className="cursor-pointer flex items-center gap-2">
+                  <Link href="/items?owner=me" className="cursor-pointer flex items-center gap-2 font-medium">
                     <Package className="w-4 h-4" /> Мои объявления
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/reservations?tab=history" className="cursor-pointer flex items-center gap-2">
+                  <Link href="/reservations?tab=history" className="cursor-pointer flex items-center gap-2 font-medium">
                     <ShoppingBag className="w-4 h-4" /> Мои покупки
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
-                  <Link href="/sales" className="cursor-pointer flex items-center gap-2">
+                  <Link href="/sales" className="cursor-pointer flex items-center gap-2 font-medium">
                     <History className="w-4 h-4" /> Мои продажи
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl">
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer rounded-xl font-bold">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Выйти</span>
                 </DropdownMenuItem>
@@ -161,8 +172,8 @@ export default function Navbar() {
             </DropdownMenu>
           ) : pathname !== '/auth' ? (
             <Link href="/auth">
-              <Button variant="outline" size="sm" className="rounded-xl px-5 border-primary text-primary hover:bg-primary/5 font-bold">
-                Зарегистрироваться
+              <Button size="sm" className="rounded-xl px-5 font-bold uppercase tracking-tight shadow-md">
+                Войти
               </Button>
             </Link>
           ) : null}
