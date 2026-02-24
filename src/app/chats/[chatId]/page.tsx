@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Banknote,
   Info,
-  CreditCard
+  CreditCard,
+  Check
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -203,32 +204,57 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-2xl p-2 w-56">
             {isSeller && chat.dealStatus === 'pending' && (
-              <>
-                <DropdownMenuItem onClick={sendLocationInfo} className="rounded-xl p-3 gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  Прислать мои контакты
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={markAsDelivered} className="rounded-xl p-3 gap-2 text-emerald-600 font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Я передал вещь (Сдал)
-                </DropdownMenuItem>
-              </>
-            )}
-            {isBuyer && chat.dealStatus === 'delivered' && (
-              <DropdownMenuItem onClick={confirmReceipt} className="rounded-xl p-3 gap-2 text-emerald-600 font-bold">
-                <CheckCircle2 className="w-4 h-4" />
-                Я получил вещь (Принял)
+              <DropdownMenuItem onClick={sendLocationInfo} className="rounded-xl p-3 gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                Прислать мои контакты
               </DropdownMenuItem>
             )}
-            {isSeller && chat.dealStatus === 'received' && (
-              <DropdownMenuItem onClick={confirmPayment} className="rounded-xl p-3 gap-2 text-primary font-bold">
-                <CreditCard className="w-4 h-4" />
-                Оплата получена
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem className="rounded-xl p-3 gap-2 text-muted-foreground">
+               <AlertCircle className="w-4 h-4" />
+               Пожаловаться
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Transaction Action Bar */}
+      {chat.dealStatus !== 'completed' && (
+        <div className="bg-primary/5 px-6 py-4 border-b flex items-center justify-between gap-4">
+          <div className="flex-1">
+             <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                {chat.dealStatus === 'pending' && 'Шаг 1: Передача'}
+                {chat.dealStatus === 'delivered' && 'Шаг 2: Приемка'}
+                {chat.dealStatus === 'received' && 'Шаг 3: Оплата'}
+             </p>
+             <p className="text-sm text-muted-foreground leading-tight">
+                {chat.dealStatus === 'pending' && (isSeller ? 'Передайте вещь и нажмите кнопку' : 'Ждем, когда продавец передаст вещь')}
+                {chat.dealStatus === 'delivered' && (isBuyer ? 'Проверьте вещь и подтвердите' : 'Покупатель проверяет вещь')}
+                {chat.dealStatus === 'received' && (isSeller ? 'Подтвердите, что деньги пришли' : 'Ожидаем подтверждения оплаты от продавца')}
+             </p>
+          </div>
+
+          {isSeller && chat.dealStatus === 'pending' && (
+            <Button onClick={markAsDelivered} className="rounded-xl h-11 px-6 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200 gap-2">
+              <Check className="w-4 h-4" />
+              Я сдал
+            </Button>
+          )}
+
+          {isBuyer && chat.dealStatus === 'delivered' && (
+            <Button onClick={confirmReceipt} className="rounded-xl h-11 px-6 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200 gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Я принял
+            </Button>
+          )}
+
+          {isSeller && chat.dealStatus === 'received' && (
+            <Button onClick={confirmPayment} className="rounded-xl h-11 px-6 bg-primary font-bold shadow-lg shadow-primary/20 gap-2">
+              <CreditCard className="w-4 h-4" />
+              Оплата получена
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Messages list */}
       <div 
