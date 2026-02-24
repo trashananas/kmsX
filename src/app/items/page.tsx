@@ -198,9 +198,9 @@ function BrowseItemsContent() {
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl font-black font-headline tracking-tight uppercase italic">
                 {showOnlyMine ? (
-                   activeMineTab === 'active' ? 'Мои вещи' : 'Мой архив'
+                   activeMineTab === 'active' ? 'Мои объявления' : 'Мой архив'
                 ) : (
-                   selectedCategoryId === 'all' ? 'Все вещи' : 
+                   selectedCategoryId === 'all' ? 'Все объявления' : 
                    selectedCategoryId === 'archive' ? 'Архив kmsX' : 'Результаты'
                 )}
                 {!isLoading && <span className="text-muted-foreground font-normal text-lg ml-3">({filteredItems.length})</span>}
