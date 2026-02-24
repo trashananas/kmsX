@@ -1,3 +1,4 @@
+
 "use client";
 
 import { cn } from '@/lib/utils';
@@ -8,7 +9,8 @@ import {
   Home, 
   Gamepad2, 
   Bike, 
-  LayoutGrid 
+  LayoutGrid,
+  Archive
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
@@ -65,6 +67,21 @@ export default function CategoryFilter({ selectedId, onSelect }: CategoryFilterP
           </button>
         );
       })}
+
+      <div className="h-px bg-muted-foreground/10 my-4 lg:my-6 hidden lg:block" />
+
+      <button
+        onClick={() => onSelect('archive')}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap lg:w-full",
+          selectedId === 'archive' 
+            ? "bg-muted text-foreground font-bold border-2 border-primary/20" 
+            : "bg-white text-muted-foreground hover:bg-muted/50 border border-transparent"
+        )}
+      >
+        <Archive className={cn("w-4 h-4", selectedId === 'archive' ? "text-primary" : "text-muted-foreground")} />
+        Архив (продано)
+      </button>
     </div>
   );
 }

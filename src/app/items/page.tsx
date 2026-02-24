@@ -3,11 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, PackageOpen, RefreshCw } from 'lucide-react';
+import { Search, PackageOpen, RefreshCw, Archive } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ItemCard from '@/components/items/ItemCard';
 import CategoryFilter from '@/components/items/CategoryFilter';
 import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
@@ -33,6 +34,7 @@ export default function BrowseItems() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('all');
   const [showOnlyFree, setShowOnlyFree] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [activeMineTab, setActiveMineTab] = useState('active'); // 'active' | 'archive'
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
@@ -52,6 +54,13 @@ export default function BrowseItems() {
 
     if (showOnlyMine) {
       q = query(baseRef, where('ownerId', '==', user.uid));
+      // Если выбрана категория внутри "Моих объявлений"
+      if (selectedCategoryId !== 'all' && selectedCategoryId !== 'archive') {
+        q = query(q, where('categoryId', '==', selectedCategoryId));
+      }
+    } else if (selectedCategoryId === 'archive') {
+      // Глобальный архив - только закончившиеся вещи
+      q = query(baseRef, where('quantity', '==', 0));
     } else {
       q = query(baseRef, where('status', '==', 'available'));
       if (selectedCategoryId !== 'all') {
@@ -74,9 +83,33 @@ export default function BrowseItems() {
   
   const { data: categories } = useCollection(categoriesQuery);
 
-  const filteredItems = items?.filter(item => 
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredItems = items?.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    // Если смотрим свои вещи, фильтруем по выбранной вкладке
+    if (showOnlyMine) {
+      const qty = item.quantity ?? 1;
+      if (activeMineTab === 'active') return qty > 0;
+      if (activeMineTab === 'archive') return qty <= 0;
+    }
+    
+    // Если обычный просмотр (не раздел Архива), скрываем проданное
+    if (!showOnlyMine && selectedCategoryId !== 'archive') {
+      const qty = item.quantity ?? 1;
+      if (qty <= 0) return false;
+    }
+
+    return true;
+  }) || [];
+
+  const handleCategorySelect = (id: string) => {
+    setSelectedCategoryId(id);
+    // Если пользователь кликает "Глобальный архив" из режима "Мои объявления", выходим из этого режима
+    if (id === 'archive' && showOnlyMine) {
+      router.push('/items');
+    }
+  };
 
   const seedMockItems = async () => {
     if (!user || !categories || categories.length === 0) {
@@ -102,7 +135,7 @@ export default function BrowseItems() {
           condition: mock.condition,
           price: mock.price,
           bank: mock.price > 0 ? "Сбер" : "",
-          quantity: 1,
+          quantity: Math.random() > 0.2 ? 1 : 0, // Некоторым ставим 0 для архива
           ownerId: user.uid,
           status: 'available',
           imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/800`],
@@ -166,7 +199,7 @@ export default function BrowseItems() {
               <h2 className="text-xl font-bold mb-6 px-2">Разделы</h2>
               <CategoryFilter 
                 selectedId={selectedCategoryId} 
-                onSelect={setSelectedCategoryId} 
+                onSelect={handleCategorySelect} 
               />
             </div>
           </aside>
@@ -174,8 +207,13 @@ export default function BrowseItems() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl font-bold font-headline tracking-tight">
-                {showOnlyMine ? 'Мои вещи' : (selectedCategoryId === 'all' ? 'Все вещи' : 'Результаты')}
-                {showOnlyFree && <span className="text-accent ml-2 text-lg">(Бесплатно)</span>}
+                {showOnlyMine ? (
+                   activeMineTab === 'active' ? 'Мои вещи' : 'Мой архив'
+                ) : (
+                   selectedCategoryId === 'all' ? 'Все вещи' : 
+                   selectedCategoryId === 'archive' ? 'Архив kmsX' : 'Результаты'
+                )}
+                {showOnlyFree && !showOnlyMine && <span className="text-accent ml-2 text-lg">(Бесплатно)</span>}
                 {!isLoading && <span className="text-muted-foreground font-normal text-lg ml-3">({filteredItems.length})</span>}
               </h1>
               {filteredItems.length === 0 && !isLoading && !showOnlyMine && (
@@ -191,6 +229,19 @@ export default function BrowseItems() {
                 </Button>
               )}
             </div>
+
+            {showOnlyMine && (
+              <Tabs value={activeMineTab} onValueChange={setActiveMineTab} className="mb-8 w-full sm:w-fit">
+                <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/50 p-1 rounded-xl">
+                  <TabsTrigger value="active" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm px-6">
+                    В продаже
+                  </TabsTrigger>
+                  <TabsTrigger value="archive" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm px-6">
+                    Архив (0 шт.)
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
 
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -208,20 +259,21 @@ export default function BrowseItems() {
                     location: item.locationName || 'Не указано',
                     distance: item.price > 0 ? `${item.price} ₽` : 'Бесплатно',
                     image: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/600/600',
-                    condition: item.condition
+                    condition: item.condition,
+                    quantity: item.quantity
                   }} />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-[3rem] border border-dashed border-muted-foreground/20">
                 <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
-                  <PackageOpen className="w-12 h-12 text-muted-foreground/30" />
+                  {selectedCategoryId === 'archive' ? <Archive className="w-12 h-12 text-muted-foreground/30" /> : <PackageOpen className="w-12 h-12 text-muted-foreground/30" />}
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Ничего не найдено</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-                  {showOnlyFree ? "Бесплатных вещей в этом разделе пока нет." : "Будьте первым, кто предложит вещь в kmsX!"}
+                  {selectedCategoryId === 'archive' ? "В архиве kmsX пока пусто." : "Будьте первым, кто предложит вещь в этом разделе!"}
                 </p>
-                {!showOnlyMine && (
+                {!showOnlyMine && selectedCategoryId !== 'archive' && (
                   <Button variant="outline" onClick={seedMockItems} disabled={isSeeding} className="rounded-2xl h-12 px-8">
                     <RefreshCw className={`mr-2 w-4 h-4 ${isSeeding ? 'animate-spin' : ''}`} />
                     Добавить 10 тестовых объявлений
