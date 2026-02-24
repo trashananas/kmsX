@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare } from 'lucide-react';
+import { PlusCircle, Compass, Layers, User, LogOut, Heart, MessageSquare, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, logOut } from '@/firebase';
@@ -85,19 +85,28 @@ export default function Navbar() {
                 </Button>
               </Link>
 
-              <Link href="/chats">
-                <Button className="rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20 font-bold gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">Чаты</span>
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href="/chats">
+                  <Button className="rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20 font-bold gap-2 h-10 px-4">
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="hidden sm:inline">Чаты</span>
+                  </Button>
+                </Link>
+
+                <Link href="/reservations">
+                  <Button className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold gap-2 h-10 px-4">
+                    <Package className="w-4 h-4" />
+                    <span className="hidden sm:inline">Брони</span>
+                  </Button>
+                </Link>
+              </div>
             </>
           )}
 
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 ml-1">
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {user.email?.[0].toUpperCase() || <User className="w-5 h-5" />}
@@ -123,6 +132,11 @@ export default function Navbar() {
                 <DropdownMenuItem asChild className="rounded-xl">
                   <Link href="/items?owner=me" className="cursor-pointer">
                     Мои объявления
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl">
+                  <Link href="/reservations" className="cursor-pointer">
+                    Мои бронирования
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-xl">
