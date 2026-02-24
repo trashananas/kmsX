@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useUser, useFirestore, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,12 @@ import { MapPin, Phone, Wallet, Building2, User } from 'lucide-react';
 export default function ProfileSettingsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const userRef = user ? doc(firestore, 'users', user.uid) : null;
+  
+  // Мемоизируем ссылку на документ, чтобы избежать циклов рендеринга и потери фокуса
+  const userRef = useMemoFirebase(() => 
+    user ? doc(firestore, 'users', user.uid) : null
+  , [firestore, user?.uid]);
+  
   const { data: profile, isLoading } = useDoc(userRef as any);
 
   const [formData, setFormData] = useState({
@@ -27,8 +32,11 @@ export default function ProfileSettingsPage() {
     bank: '',
   });
 
+  // Используем флаг для первичной инициализации, чтобы не перезаписывать вводимые данные при каждом обновлении из БД
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-    if (profile) {
+    if (profile && !isInitialized) {
       setFormData({
         username: profile.username || '',
         address: profile.address || '',
@@ -38,8 +46,9 @@ export default function ProfileSettingsPage() {
         phone: profile.phone || '',
         bank: profile.bank || '',
       });
+      setIsInitialized(true);
     }
-  }, [profile]);
+  }, [profile, isInitialized]);
 
   const handleSave = () => {
     if (!userRef) return;
@@ -50,7 +59,7 @@ export default function ProfileSettingsPage() {
     toast({ title: "Профиль обновлен", description: "Ваши данные для чатов успешно сохранены." });
   };
 
-  if (isLoading) return <div className="container p-8">Загрузка...</div>;
+  if (isLoading && !isInitialized) return <div className="container p-8">Загрузка...</div>;
 
   return (
     <div className="container max-w-2xl px-4 py-12 mx-auto">
