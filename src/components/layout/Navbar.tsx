@@ -57,14 +57,14 @@ export default function Navbar() {
   const logoUrl = branding?.logoUrl || PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '/logo.png';
 
   if (!mounted) return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b h-16" />
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b h-24" />
   );
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-110 bg-white">
+      <div className="container mx-auto px-4 h-24 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative w-14 h-14 rounded-2xl overflow-hidden shadow-sm transition-transform group-hover:scale-110 bg-white border">
             <Image 
               src={logoUrl} 
               alt="Logo" 
@@ -72,11 +72,11 @@ export default function Navbar() {
               className="object-cover"
             />
           </div>
-          <span className="font-headline font-black text-2xl tracking-tighter text-primary uppercase">kmsX</span>
+          <span className="font-headline font-black text-3xl tracking-tighter text-primary uppercase">kmsX</span>
         </Link>
 
         {user && (
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -115,29 +115,29 @@ export default function Navbar() {
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {user && (
             <>
               <Link href="/items/new">
-                <Button className="hidden sm:flex gap-2 rounded-xl font-bold uppercase tracking-tight shadow-md">
+                <Button className="hidden sm:flex h-12 gap-2 rounded-xl font-bold uppercase tracking-tight shadow-md">
                   <PlusCircle className="w-4 h-4" />
                   Разместить
                 </Button>
-                <Button size="icon" className="sm:hidden rounded-xl">
+                <Button size="icon" className="sm:hidden h-12 w-12 rounded-xl">
                   <PlusCircle className="w-5 h-5" />
                 </Button>
               </Link>
 
               <div className="flex items-center gap-2">
                 <Link href="/chats">
-                  <Button variant="ghost" className="rounded-xl bg-accent/20 text-accent-foreground hover:bg-accent/30 font-bold gap-2 h-10 px-4">
+                  <Button variant="ghost" className="rounded-xl bg-accent/20 text-accent-foreground hover:bg-accent/30 font-bold gap-2 h-12 px-5">
                     <MessageSquare className="w-4 h-4" />
                     <span className="hidden sm:inline">Чаты</span>
                   </Button>
                 </Link>
 
                 <Link href="/reservations?tab=active">
-                  <Button className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold gap-2 h-10 px-4">
+                  <Button className="rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold gap-2 px-5">
                     <ShoppingBag className="w-4 h-4" />
                     <span className="hidden sm:inline">Брони</span>
                   </Button>
@@ -149,9 +149,9 @@ export default function Navbar() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 ml-1">
-                  <Avatar className="h-10 w-10 border-2 border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                <Button variant="ghost" className="relative h-12 w-12 rounded-full p-0 ml-1">
+                  <Avatar className="h-12 w-12 border-2 border-primary/20">
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
                       {user.email?.[0].toUpperCase() || <User className="w-5 h-5" />}
                     </AvatarFallback>
                   </Avatar>
@@ -202,7 +202,7 @@ export default function Navbar() {
             </DropdownMenu>
           ) : pathname !== '/auth' ? (
             <Link href="/auth">
-              <Button size="sm" className="rounded-xl px-6 font-black uppercase tracking-tight shadow-lg shadow-primary/20">
+              <Button size="lg" className="rounded-xl px-8 h-12 font-black uppercase tracking-tight shadow-lg shadow-primary/20">
                 Войти
               </Button>
             </Link>

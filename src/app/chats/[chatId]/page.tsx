@@ -8,7 +8,7 @@ import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/fires
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { 
   Send, 
@@ -176,7 +176,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
   const isBuyer = user.uid === chat.buyerId;
 
   return (
-    <div className="fixed inset-0 top-16 bg-background flex flex-col z-40">
+    <div className="fixed inset-0 top-24 bg-background flex flex-col z-40">
       {/* Header */}
       <div className="p-4 bg-white border-b flex items-center gap-4 shadow-sm shrink-0">
         <Link href="/chats">
