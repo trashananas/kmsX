@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { X, Heart, MapPin, Info, ArrowLeft, RefreshCw, PackageOpen } from 'lucide-react';
+import { X, Heart, Info, ArrowLeft, RefreshCw, PackageOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -28,7 +27,6 @@ export default function SwipeMode() {
   const swipeQuery = useMemoFirebase(() => {
     if (!user) return null;
     const baseRef = collection(firestore, 'item_listings');
-    // Filter out items with 0 quantity (sold out)
     return query(
       baseRef, 
       where('status', '==', 'available'),
@@ -38,7 +36,6 @@ export default function SwipeMode() {
   }, [firestore, user]);
 
   const { data: rawItems, isLoading } = useCollection(swipeQuery);
-  // Also filter my items on client side to avoid index issues
   const items = (rawItems || []).filter(item => !user || item.ownerId !== user.uid);
 
   const handleLike = useCallback((item: any) => {
@@ -193,10 +190,6 @@ export default function SwipeMode() {
                     {currentItem.condition || 'Любое состояние'}
                   </Badge>
                   <h2 className="text-3xl font-bold mb-2 leading-[1.1] tracking-tight">{currentItem.title}</h2>
-                  <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    <span>{currentItem.locationName || 'Любое место'}</span>
-                  </div>
                 </div>
                 <Link href={`/items/${currentItem.id}?from=swipe`} className="shrink-0">
                   <Button variant="outline" size="icon" className="rounded-full h-14 w-14 bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary hover:border-white shadow-lg backdrop-blur-md">

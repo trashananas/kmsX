@@ -1,9 +1,8 @@
-
 "use client";
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Heart, CalendarCheck, Package } from 'lucide-react';
+import { Heart, CalendarCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,6 @@ export default function ItemCard({ item }: { item: Item }) {
   const itemListingRef = useMemoFirebase(() => doc(firestore, 'item_listings', item.id), [firestore, item.id]);
   const { data: fullItem } = useDoc(itemListingRef);
   
-  // Robust quantity calculation to avoid NaN
   const getSafeQuantity = (val: any) => {
     const num = typeof val === 'number' ? val : parseInt(val);
     return isNaN(num) ? null : num;
@@ -134,9 +132,6 @@ export default function ItemCard({ item }: { item: Item }) {
           </h3>
         </Link>
         <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
-          <MapPin className="w-3.5 h-3.5" />
-          <span>{item.location}</span>
-          <span className="mx-1">•</span>
           <span className={isSoldOut ? "text-destructive font-bold" : "text-primary font-medium"}>
             {isSoldOut ? "Нет в наличии" : item.distance}
           </span>

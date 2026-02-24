@@ -1,4 +1,3 @@
-
 "use client";
 
 import { use, useState } from 'react';
@@ -7,17 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
-  MapPin, 
   Tag, 
   User, 
-  Trash2, 
   MessageCircle,
   Clock,
-  ShieldCheck,
-  AlertTriangle,
-  Wallet,
-  Package,
-  CalendarCheck
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +93,7 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
           itemTitle: item.title,
           itemImage: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/200/200',
           price: item.price || 0,
-          quantity: 1, // Default quantity for inquiry
+          quantity: 1, 
           buyerId: user.uid,
           sellerId: item.ownerId,
           status: 'active',
@@ -146,14 +139,13 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
       createdAt: new Date().toISOString()
     }, { merge: true });
 
-    // Инициализация чата с системным сообщением
     const chatsRef = collection(firestore, 'chats');
     const newChatRef = await addDocumentNonBlocking(chatsRef, {
       itemId: item.id,
       itemTitle: item.title,
       itemImage: item.imageUrls?.[0] || 'https://picsum.photos/seed/1/200/200',
       price: item.price || 0,
-      quantity: reserveCount, // Store exact quantity in chat
+      quantity: reserveCount, 
       buyerId: user.uid,
       sellerId: item.ownerId,
       status: 'active',
@@ -219,11 +211,9 @@ export default function ItemDetailsPage({ params }: { params: Promise<{ id: stri
               </Badge>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
-              <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-primary" />{item.locationName}</div>
               <div className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-primary" />{item.createdAt && format(new Date(item.createdAt), 'd MMMM yyyy', { locale: ru })}</div>
             </div>
 
-            {/* Информация о продавце */}
             <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
               <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-sm">
                 <User className="w-6 h-6" />
