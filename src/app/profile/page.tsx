@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { MapPin, Phone, Wallet, Building2, User, Info } from 'lucide-react';
+import { MapPin, Phone, Wallet, Building2, User, Info, RefreshCw } from 'lucide-react';
 
 export default function ProfileSettingsPage() {
   const { user } = useUser();
@@ -34,8 +34,9 @@ export default function ProfileSettingsPage() {
 
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Инициализация формы текущими данными профиля
   useEffect(() => {
-    if (profile && !isInitialized) {
+    if (!isLoading && profile && !isInitialized) {
       setFormData({
         username: profile.username || '',
         address: profile.address || '',
@@ -48,7 +49,7 @@ export default function ProfileSettingsPage() {
       });
       setIsInitialized(true);
     }
-  }, [profile, isInitialized]);
+  }, [profile, isLoading, isInitialized]);
 
   const handleSave = () => {
     if (!userRef) return;
@@ -59,7 +60,13 @@ export default function ProfileSettingsPage() {
     toast({ title: "Профиль обновлен", description: "Ваши данные для чатов успешно сохранены." });
   };
 
-  if (isLoading && !isInitialized) return <div className="container p-8">Загрузка...</div>;
+  if (isLoading && !isInitialized) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-20">
+        <RefreshCw className="w-8 h-8 animate-spin text-primary opacity-20" />
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-2xl px-4 py-12 mx-auto">

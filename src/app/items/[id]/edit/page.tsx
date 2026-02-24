@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, ChevronLeft, X, Wallet, Package, Banknote } from 'lucide-react';
+import { UploadCloud, ChevronLeft, X, Wallet, Package, Banknote, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,23 +44,24 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
     quantity: '1',
   });
 
+  // Инициализация формы текущими данными товара
   useEffect(() => {
-    if (item && !isInitialized) {
+    if (!isItemLoading && item && !isInitialized) {
       setFormData({
         title: item.title || '',
         description: item.description || '',
         categoryId: item.categoryId || '',
         condition: item.condition || '',
-        price: item.price?.toString() || '',
+        price: item.price !== undefined ? String(item.price) : '',
         bank: item.bank || '',
-        quantity: item.quantity?.toString() || '1',
+        quantity: item.quantity !== undefined ? String(item.quantity) : '1',
       });
-      if (item.imageUrls?.[0]) {
+      if (item.imageUrls && item.imageUrls[0]) {
         setPreviewImage(item.imageUrls[0]);
       }
       setIsInitialized(true);
     }
-  }, [item, isInitialized]);
+  }, [item, isItemLoading, isInitialized]);
 
   const categoriesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -80,7 +81,7 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (item && item.ownerId !== user.uid) {
+  if (!isItemLoading && item && item.ownerId !== user.uid) {
     return (
       <div className="container px-4 py-20 text-center">
         <h2 className="text-2xl font-bold mb-4">У вас нет прав для редактирования этого объявления</h2>
@@ -140,7 +141,13 @@ export default function EditItemListing({ params }: { params: Promise<{ id: stri
     }
   };
 
-  if (isItemLoading && !isInitialized) return <div className="container p-20 text-center">Загрузка...</div>;
+  if (isItemLoading && !isInitialized) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-20">
+        <RefreshCw className="w-8 h-8 animate-spin text-primary opacity-20" />
+      </div>
+    );
+  }
 
   return (
     <div className="container px-4 py-8 max-w-2xl mx-auto">
