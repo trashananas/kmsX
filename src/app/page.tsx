@@ -26,7 +26,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background pointer-events-none" />
         
         <div className="container px-6 text-center z-10 py-12 animate-in fade-in zoom-in duration-1000">
-          <div className="relative w-56 h-56 md:w-80 md:h-80 mx-auto mb-8 md:mb-12 shadow-2xl rounded-[3rem] md:rounded-[4rem] overflow-hidden border-8 border-white bg-white">
+          <div className="relative w-48 h-48 sm:w-56 sm:h-56 md:w-80 md:h-80 mx-auto mb-8 md:mb-12 shadow-2xl rounded-[2.5rem] sm:rounded-[3rem] md:rounded-[4rem] overflow-hidden border-8 border-white bg-white">
             <Image 
               src={logoUrl} 
               alt="Клуб логотип" 
@@ -35,21 +35,21 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-6xl md:text-8xl font-headline font-black mb-10 md:mb-16 tracking-tighter uppercase">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-headline font-black mb-10 md:mb-16 tracking-tighter uppercase leading-tight">
             Встречайте <span className="text-primary italic">kmsX</span>
           </h1>
           
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center max-w-xs sm:max-w-none mx-auto">
             {user ? (
               <Link href="/items" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:px-16 h-16 md:h-20 text-xl md:text-2xl rounded-[1.5rem] md:rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
+                <Button size="lg" className="w-full sm:px-16 h-16 md:h-20 text-xl md:text-2xl rounded-[1.25rem] sm:rounded-[1.5rem] md:rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
                   Смотреть вещи
                   <Zap className="ml-3 w-6 h-6 md:w-8 md:h-8 group-hover:scale-125 transition-transform fill-white" />
                 </Button>
               </Link>
             ) : (
               <Link href="/auth" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:px-16 h-16 md:h-20 text-xl md:text-2xl rounded-[1.5rem] md:rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
+                <Button size="lg" className="w-full sm:px-16 h-16 md:h-20 text-xl md:text-2xl rounded-[1.25rem] sm:rounded-[1.5rem] md:rounded-3xl shadow-2xl shadow-primary/30 group font-black uppercase tracking-tight">
                   Начать обмен
                   <Zap className="ml-3 w-6 h-6 md:w-8 md:h-8 group-hover:scale-125 transition-transform fill-white" />
                 </Button>
@@ -62,8 +62,6 @@ export default function Home() {
         <div className="absolute -bottom-40 -left-40 w-[20rem] md:w-[30rem] h-[20rem] md:h-[30rem] bg-accent/10 rounded-full blur-[100px] animate-pulse" />
         <div className="absolute -top-40 -right-40 w-[20rem] md:w-[30rem] h-[20rem] md:h-[30rem] bg-primary/10 rounded-full blur-[100px] animate-pulse delay-1000" />
       </section>
-
-      {/* Лишние CTA секции удалены для чистоты мобильного вида */}
     </div>
   );
 }
