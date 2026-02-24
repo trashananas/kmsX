@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Mail, Lock, User, ArrowRight, Ghost } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, useUser, initiateEmailSignIn, initiateEmailSignUp, initiatePasswordReset, initiateAnonymousSignIn } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
@@ -22,8 +20,6 @@ export default function AuthPage() {
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
-
-  const logoImg = PlaceHolderImages.find(img => img.id === 'logo');
 
   useEffect(() => {
     if (user) {
@@ -102,15 +98,6 @@ export default function AuthPage() {
     <div className="flex-1 flex items-center justify-center p-4 bg-muted/30">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="relative w-24 h-24 mx-auto mb-6 shadow-xl rounded-[2rem] overflow-hidden border-2 border-white bg-white">
-            <Image 
-              src={logoImg?.imageUrl || '/logo.png'} 
-              alt="Клуб логотип" 
-              fill 
-              className="object-cover"
-              data-ai-hint="family logo"
-            />
-          </div>
           <h1 className="text-4xl font-black font-headline mb-2 tracking-tighter uppercase">Вход в kmsX</h1>
           <p className="text-muted-foreground font-medium italic">Клуб многодетных семей Выхино-Жулебино</p>
         </div>
