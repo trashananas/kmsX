@@ -112,7 +112,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
   };
 
   const sendLocationInfo = () => {
-    if (!sellerProfile) return;
+    if (!sellerProfile) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Ваш профиль не заполнен. Перейдите в настройки.",
+      });
+      return;
+    }
     const infoText = `Адрес: ${sellerProfile.address || 'не указан'}, Эт: ${sellerProfile.floor || '-'}, Кв: ${sellerProfile.apartment || '-'}, Код: ${sellerProfile.intercom || '-'}, Тел: ${sellerProfile.phone || '-'}, Банк: ${sellerProfile.bank || '-'}`;
     sendMessage(infoText, 'info', { 
       infoData: {
@@ -125,6 +132,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
         bank: sellerProfile.bank
       } 
     });
+    toast({ title: "Контакты отправлены" });
   };
 
   const markAsDelivered = () => {
@@ -135,8 +143,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
   const confirmReceipt = () => {
     if (!chat) return;
     const finalPrice = chat.price || 0;
-    // Если товар платный (цена > 0), переходим в статус 'received' (ожидание оплаты)
-    // Если бесплатный, сразу 'completed' и в архив
     const nextStatus = finalPrice > 0 ? 'received' : 'completed';
     const archiveStatus = nextStatus === 'completed' ? 'archived' : 'active';
     
@@ -205,13 +211,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="rounded-2xl p-2 w-56">
+            <div className="px-3 py-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Действия</div>
             {isSeller && chat.dealStatus === 'pending' && (
               <DropdownMenuItem onClick={sendLocationInfo} className="rounded-xl p-3 gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
                 Прислать мои контакты
               </DropdownMenuItem>
             )}
-            <div className="px-3 py-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Действия</div>
+            <DropdownMenuItem asChild className="rounded-xl p-3 gap-2">
+              <Link href={`/items/${chat.itemId}`}>
+                <Package className="w-4 h-4" />
+                Перейти к товару
+              </Link>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -226,17 +238,23 @@ export default function ChatDetailPage({ params }: { params: Promise<{ chatId: s
                 {chat.dealStatus === 'received' && 'Шаг 3: Оплата'}
              </p>
              <p className="text-sm text-muted-foreground leading-tight">
-                {chat.dealStatus === 'pending' && (isSeller ? 'Передайте вещь и нажмите кнопку' : 'Ждем, когда продавец передаст вещь')}
+                {chat.dealStatus === 'pending' && (isSeller ? 'Отправьте контакты и передайте вещь' : 'Ждем, когда продавец передаст вещь')}
                 {chat.dealStatus === 'delivered' && (isBuyer ? 'Проверьте вещь и подтвердите' : 'Покупатель проверяет вещь')}
                 {chat.dealStatus === 'received' && (isSeller ? 'Подтвердите, что деньги пришли' : 'Ожидаем подтверждения оплаты от продавца')}
              </p>
           </div>
 
           {isSeller && chat.dealStatus === 'pending' && (
-            <Button onClick={markAsDelivered} className="rounded-xl h-11 px-6 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200 gap-2">
-              <Check className="w-4 h-4" />
-              Я сдал
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={sendLocationInfo} variant="outline" className="rounded-xl h-11 px-4 border-primary/20 text-primary font-bold gap-2">
+                <MapPin className="w-4 h-4" />
+                Мои контакты
+              </Button>
+              <Button onClick={markAsDelivered} className="rounded-xl h-11 px-6 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200 gap-2">
+                <Check className="w-4 h-4" />
+                Я сдал
+              </Button>
+            </div>
           )}
 
           {isBuyer && chat.dealStatus === 'delivered' && (
