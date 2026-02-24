@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useUser, useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, getDocs } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, MessageCircle, ExternalLink, Trash2, ShoppingCart, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Package, MessageSquare, ExternalLink, Trash2, ShoppingCart, RefreshCw, CheckCircle2, History } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -103,8 +103,8 @@ export default function ReservationsPage() {
 
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-14 bg-muted/50 p-1 rounded-2xl mb-8">
-          <TabsTrigger value="active" className="rounded-xl font-bold">Активные ({reservations.length})</TabsTrigger>
-          <TabsTrigger value="history" className="rounded-xl font-bold">История ({purchaseHistory?.length || 0})</TabsTrigger>
+          <TabsTrigger value="active" className="rounded-xl font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Активные ({reservations.length})</TabsTrigger>
+          <TabsTrigger value="history" className="rounded-xl font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">История ({purchaseHistory?.length || 0})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="active">
@@ -169,7 +169,7 @@ export default function ReservationsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed">
+            <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-muted-foreground/20">
               <Package className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
               <p className="text-muted-foreground font-medium">Активных броней пока нет</p>
             </div>
@@ -184,9 +184,9 @@ export default function ReservationsPage() {
           ) : purchaseHistory && purchaseHistory.length > 0 ? (
             <div className="grid gap-6">
               {purchaseHistory.map((chat) => (
-                <Card key={chat.id} className="rounded-[2.5rem] border-none shadow-sm bg-white/50 grayscale-[0.5]">
+                <Card key={chat.id} className="rounded-[2.5rem] border-none shadow-sm bg-white grayscale-[0.5] overflow-hidden">
                   <CardContent className="p-0 flex flex-col sm:flex-row items-center">
-                    <div className="relative w-full sm:w-32 h-32 shrink-0 m-4 rounded-2xl overflow-hidden">
+                    <div className="relative w-full sm:w-32 h-32 shrink-0 m-4 rounded-2xl overflow-hidden shadow-sm">
                       <Image src={chat.itemImage || 'https://picsum.photos/seed/1/400/400'} alt="" fill className="object-cover" />
                     </div>
                     <div className="flex-1 p-6">
@@ -208,7 +208,7 @@ export default function ReservationsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed">
+            <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-muted-foreground/20">
               <History className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
               <p className="text-muted-foreground font-medium">История покупок пуста</p>
             </div>
