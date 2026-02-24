@@ -100,18 +100,6 @@ export default function Navbar() {
               <Heart className="w-4 h-4" />
               Лайки
             </Link>
-            {isAdmin && (
-              <Link 
-                href="/admin"
-                className={cn(
-                  "flex items-center gap-1.5 text-sm font-bold transition-colors text-primary hover:text-primary/80 uppercase tracking-wide",
-                  pathname === '/admin' ? "text-primary" : "text-primary/70"
-                )}
-              >
-                <ShieldAlert className="w-4 h-4" />
-                Админ
-              </Link>
-            )}
           </div>
         )}
 
