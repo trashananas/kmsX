@@ -30,7 +30,7 @@ function DynamicBranding() {
   const brandingRef = useMemoFirebase(() => doc(firestore, 'settings', 'branding'), [firestore]);
   const { data: branding } = useDoc(brandingRef as any);
   
-  const logoUrl = branding?.logoUrl || PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '/logo.png';
+  const logoUrl = branding?.logoUrl || PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '/favicon.ico';
 
   useEffect(() => {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
@@ -53,7 +53,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-        <link rel="icon" href="/logo.png" />
+        <link rel="icon" href="/favicon.ico" />
         <title>kmsX | Современный обмен вещами</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </head>
